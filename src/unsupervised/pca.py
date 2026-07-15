@@ -145,3 +145,44 @@ class PCA:
             raise ValueError("X contains NaN or infinite values.")
 
         return X
+    
+    def cumulative_explained_variance(self) -> np.ndarray:
+        """
+        Return the cumulative explained variance ratio.
+        """
+        self._check_is_fitted()
+
+        return np.cumsum(self.explained_variance_ratio_)
+    
+    def scree_data(self):
+        """
+        Return data for creating a scree plot.
+        """
+        self._check_is_fitted()
+
+        components = np.arange(
+            1,
+            len(self.explained_variance_) + 1
+        )
+
+        return (
+            components,
+            self.explained_variance_,
+            self.cumulative_explained_variance(),
+        )
+    
+    def explained_variance_report(self):
+        """
+        Return explained variance information.
+        """
+        self._check_is_fitted()
+
+        return {
+            "explained_variance": self.explained_variance_,
+            "explained_variance_ratio": (
+                self.explained_variance_ratio_
+            ),
+            "cumulative_explained_variance": (
+                self.cumulative_explained_variance()
+            ),
+        }
