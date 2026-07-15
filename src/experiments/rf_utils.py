@@ -1,9 +1,9 @@
 """Utility functions for Person 3 Random Forest experiments.
 
-The helpers in this file keep the experiment scripts short and reproducible.
-They intentionally use sklearn only for datasets, metrics, preprocessing, and
-reference baselines. The project implementation of Random Forest remains the
-from-scratch class in ``src.bagging.random_forest``.
+The helpers in this module keep experiment scripts short and reproducible.
+Scikit-learn is used only for datasets, metrics, preprocessing, and reference
+support. The project Random Forest implementation remains the from-scratch
+class in ``src.bagging.random_forest``.
 """
 
 from __future__ import annotations
@@ -21,12 +21,7 @@ from sklearn.preprocessing import StandardScaler
 
 RANDOM_STATE = 42
 
-# This file is located at:
-# repository/src/experiments/rf_utils.py
-#
-# parents[0] -> repository/src/experiments
-# parents[1] -> repository/src
-# parents[2] -> repository root
+# repository/src/experiments/rf_utils.py -> repository root is parents[2]
 ROOT_DIR = Path(__file__).resolve().parents[2]
 FIGURES_DIR = ROOT_DIR / "figures"
 RESULTS_DIR = ROOT_DIR / "results"
@@ -35,7 +30,7 @@ DATA_DIR = ROOT_DIR / "data"
 
 @dataclass(frozen=True)
 class DatasetBundle:
-    """Container used by the experiment scripts."""
+    """Container used by the Random Forest experiment scripts."""
 
     name: str
     X: np.ndarray
@@ -45,7 +40,7 @@ class DatasetBundle:
 
     @property
     def minority_fraction(self) -> float:
-        """Return the fraction of samples belonging to the smallest class."""
+        """Return the fraction of samples in the smallest class."""
         y_array = np.asarray(self.y)
 
         if y_array.size == 0:
@@ -56,13 +51,13 @@ class DatasetBundle:
 
 
 def ensure_output_dirs() -> None:
-    """Create output folders for figures and CSV result tables."""
+    """Create root-level output folders for figures and result tables."""
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def load_breast_cancer_bundle() -> DatasetBundle:
-    """Load a small real-world binary classification dataset."""
+    """Load the Breast Cancer Wisconsin binary dataset."""
     data = load_breast_cancer()
 
     return DatasetBundle(
@@ -78,11 +73,7 @@ def load_breast_cancer_bundle() -> DatasetBundle:
 
 
 def load_digits_binary_bundle() -> DatasetBundle:
-    """Load a high-dimensional binary subset of the Digits dataset.
-
-    Digits has 64 input features, which satisfies the project requirement for
-    at least one high-dimensional dataset with more than 20 features.
-    """
+    """Load a high-dimensional binary subset of Digits: class 3 vs class 8."""
     data = load_digits()
     mask = np.isin(data.target, [3, 8])
 
@@ -102,11 +93,10 @@ def load_digits_binary_bundle() -> DatasetBundle:
 
 
 def load_imbalanced_bundle() -> DatasetBundle:
-    """Load a real or fallback severely imbalanced binary dataset.
+    """Load Covertype when available, otherwise create a 99:1 fallback.
 
-    If ``data/covtype.data`` exists, a one-vs-rest Covertype task is created
-    with cover type 4 as the positive class. Otherwise, a deterministic
-    synthetic 99:1 dataset is used for offline smoke testing.
+    For the final report, the real downloaded dataset should be preferred.
+    The synthetic dataset exists only so offline smoke tests remain reproducible.
     """
     covtype_path = DATA_DIR / "covtype.data"
 
@@ -176,7 +166,7 @@ def train_test_scaled_split(
     test_size: float = 0.25,
     random_state: int = RANDOM_STATE,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Create a stratified split and standardize using training data only."""
+    """Create a stratified split and fit scaling on training data only."""
     X_array = np.asarray(X, dtype=float)
     y_array = np.asarray(y)
 
@@ -212,11 +202,7 @@ def random_oversample_minority(
     y: np.ndarray,
     random_state: int = RANDOM_STATE,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Balance classes by randomly oversampling minority classes.
-
-    Sampling is performed with replacement until every class has the same
-    number of samples as the majority class.
-    """
+    """Balance classes by randomly oversampling minority classes."""
     X_array = np.asarray(X)
     y_array = np.asarray(y)
 
@@ -256,7 +242,6 @@ def random_oversample_minority(
 
     X_resampled = np.vstack(X_parts)
     y_resampled = np.concatenate(y_parts)
-
     permutation = rng.permutation(y_resampled.shape[0])
 
     return X_resampled[permutation], y_resampled[permutation]
@@ -277,8 +262,8 @@ def prepare_bundle_split(
 ]:
     """Split, scale, and optionally treat severe class imbalance.
 
-    Standardization is fitted on training data only. Random oversampling is
-    also applied only to the training split, leaving the test data unchanged.
+    Standardization is fitted only on training data. Oversampling is also
+    applied only to the training split, so the test set remains unchanged.
 
     Returns
     -------
