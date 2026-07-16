@@ -68,7 +68,10 @@ class DBSCAN:
     ) -> np.ndarray:
         """Return indices of samples inside the epsilon neighborhood."""
         differences = X - X[sample_index]
-        squared_distances = np.sum(differences**2, axis=1)
+        squared_distances = np.sum(
+            differences**2,
+            axis=1,
+        )
 
         return np.flatnonzero(
             squared_distances <= self.eps**2
@@ -164,7 +167,9 @@ class DBSCAN:
             cluster_id += 1
 
         self.labels_ = labels
-        self.core_sample_indices_ = np.flatnonzero(core_mask)
+        self.core_sample_indices_ = np.flatnonzero(
+            core_mask
+        )
         self.n_clusters_ = cluster_id
 
         return self
@@ -179,3 +184,115 @@ class DBSCAN:
             )
 
         return self.labels_.copy()
+
+    @staticmethod
+    def k_distances(
+        X: np.ndarray,
+        k: int,
+    ) -> np.ndarray:
+        """
+        Compute the distance from each sample to its k-th nearest neighbor.
+
+        The returned distances are sorted in ascending order.
+        """
+        X = DBSCAN._validate_input(X)
+
+        if not isinstance(k, int):
+            raise TypeError("k must be an integer.")
+
+        if k <= 0:
+            raise ValueError("k must be positive.")
+
+        if k >= X.shape[0]:
+            raise ValueError(
+                "k must be smaller than the number of samples."
+            )
+
+        differences = (
+            X[:, np.newaxis, :]
+            - X[np.newaxis, :, :]
+        )
+
+        squared_distances = np.sum(
+            differences**2,
+            axis=2,
+        )
+
+        distances = np.sqrt(
+            squared_distances
+        )
+
+        sorted_distances = np.sort(
+            distances,
+            axis=1,
+        )
+
+        # Index zero is each sample's distance to itself.
+        kth_distances = sorted_distances[:, k]
+
+        return np.sort(kth_distances)
+
+    @staticmethod
+    def k_distance_curve(
+        X: np.ndarray,
+        k: int,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Return sample order and distances for a k-distance plot.
+        """
+        distances = DBSCAN.k_distances(
+            X,
+            k,
+        )
+
+        sample_order = np.arange(
+            1,
+            distances.shape[0] + 1,
+        )
+
+        return sample_order, distances
+
+    def epsilon_candidates(
+        self,
+        X: np.ndarray,
+        *,
+        k: int | None = None,
+        quantiles: tuple[float, ...] = (
+            0.80,
+            0.90,
+            0.95,
+        ),
+    ) -> dict[float, float]:
+        """
+        Suggest epsilon candidates from k-distance quantiles.
+
+        By default, k is min_samples - 1 because each sample itself
+        occupies the zero-distance position.
+        """
+        if k is None:
+            k = max(
+                1,
+                self.min_samples - 1,
+            )
+
+        distances = self.k_distances(
+            X,
+            k,
+        )
+
+        candidates: dict[float, float] = {}
+
+        for quantile in quantiles:
+            if not 0 < quantile <= 1:
+                raise ValueError(
+                    "Every quantile must be in the interval (0, 1]."
+                )
+
+            candidates[quantile] = float(
+                np.quantile(
+                    distances,
+                    quantile,
+                )
+            )
+
+        return candidates
