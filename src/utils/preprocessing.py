@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from sklearn.model_selection import train_test_split as _sklearn_train_test_split
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,31 @@ class DatasetBundle:
     source: str = "unknown"
     task: str = "classification"
     notes: str = ""
+
+
+def handle_missing_values(X: np.ndarray) -> np.ndarray:
+    """Impute missing values with the column median without mutating the input."""
+    X_array = np.asarray(X, dtype=float)
+    if X_array.ndim != 2:
+        raise ValueError("X must be a two-dimensional array.")
+
+    if X_array.shape[0] == 0 or X_array.shape[1] == 0:
+        raise ValueError("X cannot be empty.")
+
+    X_filled = X_array.copy()
+    for column_index in range(X_filled.shape[1]):
+        column = X_filled[:, column_index]
+        if np.all(np.isnan(column)):
+            raise ValueError("Cannot impute a column containing only missing values.")
+        median_value = np.nanmedian(column)
+        X_filled[:, column_index] = np.where(np.isnan(column), median_value, column)
+
+    return X_filled
+
+
+def train_test_split(*args: Any, **kwargs: Any) -> Any:
+    """Compatibility wrapper around sklearn's train_test_split."""
+    return _sklearn_train_test_split(*args, **kwargs)
 
 
 def _resolve_data_path(path: str | Path, *, data_dir: str | Path | None = None) -> Path:
