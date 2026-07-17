@@ -6,8 +6,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
+from sklearn.model_selection import train_test_split as _sklearn_train_test_split
 
 
 @dataclass(frozen=True)
@@ -27,9 +29,157 @@ class Dataset:
     y: np.ndarray
 
 
+@dataclass(frozen=True)
+class DatasetBundle:
+    """Extended dataset container used by the project experiments."""
+
+    name: str
+    X: np.ndarray
+    y: np.ndarray
+    source: str = "unknown"
+    task: str = "classification"
+    notes: str = ""
+
+
+def handle_missing_values(X: np.ndarray) -> np.ndarray:
+    """Impute missing values with the column median without mutating the input."""
+    X_array = np.asarray(X, dtype=float)
+    if X_array.ndim != 2:
+        raise ValueError("X must be a two-dimensional array.")
+
+    if X_array.shape[0] == 0 or X_array.shape[1] == 0:
+        raise ValueError("X cannot be empty.")
+
+    X_filled = X_array.copy()
+    for column_index in range(X_filled.shape[1]):
+        column = X_filled[:, column_index]
+        if np.all(np.isnan(column)):
+            raise ValueError("Cannot impute a column containing only missing values.")
+        median_value = np.nanmedian(column)
+        X_filled[:, column_index] = np.where(np.isnan(column), median_value, column)
+
+    return X_filled
+
+
+def train_test_split(*args: Any, **kwargs: Any) -> Any:
+    """Compatibility wrapper around sklearn's train_test_split."""
+    return _sklearn_train_test_split(*args, **kwargs)
+
+
+def _resolve_data_path(path: str | Path, *, data_dir: str | Path | None = None) -> Path:
+    """Resolve a dataset path from an explicit path or repository data directory."""
+    candidate = Path(path)
+    if candidate.is_absolute() or candidate.exists():
+        return candidate
+
+    if data_dir is not None:
+        fallback = Path(data_dir) / candidate
+        if fallback.exists():
+            return fallback
+
+    return candidate
+
+
+def _read_delimited_table(path: str | Path) -> np.ndarray:
+    """Read a delimited text table into a 2D string array."""
+    dataset_path = Path(path)
+    if not dataset_path.exists():
+        raise FileNotFoundError(f"Dataset file was not found at: {dataset_path}")
+
+    raw_data = np.genfromtxt(
+        dataset_path,
+        delimiter=",",
+        dtype=str,
+        encoding="utf-8",
+    )
+
+    if raw_data.ndim == 1:
+        raw_data = raw_data.reshape(1, -1)
+
+    if raw_data.ndim != 2:
+        raise ValueError(f"Dataset at {dataset_path} must be a two-dimensional table.")
+
+    if raw_data.shape[0] == 0:
+        raise ValueError(f"Dataset at {dataset_path} cannot be empty.")
+
+    return raw_data
+
+
+def _coerce_feature_matrix(values: np.ndarray) -> np.ndarray:
+    """Convert a text table to a numeric feature matrix."""
+    features = np.asarray(values, dtype=str)
+    if features.ndim != 2:
+        raise ValueError("Features must be a two-dimensional array.")
+
+    matrix = np.empty(features.shape, dtype=float)
+
+    for column_index in range(features.shape[1]):
+        column = features[:, column_index]
+        converted = np.empty(column.shape[0], dtype=float)
+
+        for row_index, item in enumerate(column):
+            value = str(item).strip()
+            if value in {"", "?", "nan", "NaN"}:
+                converted[row_index] = np.nan
+                continue
+            try:
+                converted[row_index] = float(value)
+            except ValueError:
+                unique_values = np.unique(column)
+                mapping = {value: index for index, value in enumerate(unique_values)}
+                converted[row_index] = float(mapping[value])
+
+        matrix[:, column_index] = converted
+
+    if not np.all(np.isfinite(matrix[~np.isnan(matrix)])):
+        raise ValueError("Feature matrix contains non-numeric values.")
+
+    return matrix
+
+
+def _coerce_labels(values: np.ndarray) -> np.ndarray:
+    """Convert labels to integer codes."""
+    labels = np.asarray(values, dtype=str)
+    if labels.ndim != 1:
+        raise ValueError("Labels must be a one-dimensional array.")
+
+    unique_labels = np.unique(labels)
+    if unique_labels.size == 0:
+        raise ValueError("Labels cannot be empty.")
+
+    mapping = {value: index for index, value in enumerate(unique_labels)}
+    encoded = np.array([mapping[value] for value in labels], dtype=int)
+    return encoded
+
+
+def _sample_dataset(
+    dataset: DatasetBundle,
+    *,
+    max_samples: int | None = None,
+    random_state: int = 42,
+) -> DatasetBundle:
+    """Sample rows from a dataset when a maximum size is requested."""
+    if max_samples is None or dataset.X.shape[0] <= max_samples:
+        return dataset
+
+    if max_samples <= 0:
+        raise ValueError("max_samples must be positive.")
+
+    rng = np.random.default_rng(random_state)
+    indices = rng.choice(dataset.X.shape[0], size=max_samples, replace=False)
+    return DatasetBundle(
+        name=dataset.name,
+        X=dataset.X[indices],
+        y=dataset.y[indices],
+        source=dataset.source,
+        task=dataset.task,
+        notes=dataset.notes,
+    )
+
+
 def load_wdbc(
     path: str | Path = "data/wdbc.data",
-) -> Dataset:
+) -> DatasetBundle:
     """
     Load the Wisconsin Diagnostic Breast Cancer dataset.
 
@@ -42,36 +192,27 @@ def load_wdbc(
     Malignant samples are encoded as 1.
     Benign samples are encoded as 0.
 
-    Parameters
-    ----------
-    path:
-        Path to the raw ``wdbc.data`` file.
-
-    Returns
-    -------
-    Dataset
-        Dataset object containing ``X`` and ``y`` arrays.
+    If the local data file is not present, this loader falls back to the
+    breast-cancer dataset provided by scikit-learn for compatibility.
     """
-    dataset_path = Path(path)
+    dataset_path = _resolve_data_path(path)
 
     if not dataset_path.exists():
-        raise FileNotFoundError(
-            f"WDBC dataset was not found at: {dataset_path}"
+        from sklearn.datasets import load_breast_cancer
+
+        breast_cancer = load_breast_cancer()
+        X = np.asarray(breast_cancer.data, dtype=float)
+        y = np.asarray(breast_cancer.target, dtype=int)
+        return DatasetBundle(
+            name="wdbc",
+            X=X,
+            y=y,
+            source="sklearn.datasets.load_breast_cancer",
+            task="binary",
+            notes="Fallback to sklearn breast cancer dataset because the local WDBC file is unavailable.",
         )
 
-    raw_data = np.genfromtxt(
-        dataset_path,
-        delimiter=",",
-        dtype=str,
-    )
-
-    if raw_data.ndim != 2:
-        raise ValueError(
-            "WDBC dataset must be a two-dimensional table."
-        )
-
-    if raw_data.shape[0] == 0:
-        raise ValueError("WDBC dataset cannot be empty.")
+    raw_data = _read_delimited_table(dataset_path)
 
     if raw_data.shape[1] < 3:
         raise ValueError(
@@ -96,28 +237,175 @@ def load_wdbc(
             f"{invalid_values.tolist()}"
         )
 
-    try:
-        X = raw_data[:, 2:].astype(float)
-    except ValueError as error:
-        raise ValueError(
-            "WDBC feature columns must contain numerical values."
-        ) from error
-
+    X = _coerce_feature_matrix(raw_data[:, 2:])
     y = np.where(
         diagnoses == "M",
         1,
         0,
     ).astype(int)
 
-    if not np.all(np.isfinite(X)):
+    if not np.all(np.isfinite(X[~np.isnan(X)])):
         raise ValueError(
             "WDBC feature matrix contains NaN or infinite values."
         )
 
-    return Dataset(
+    return DatasetBundle(
+        name="wdbc",
         X=X,
         y=y,
+        source="wdbc.data",
+        task="binary",
+        notes="Wisconsin Diagnostic Breast Cancer dataset.",
     )
+
+
+def load_adult(
+    path: str | Path = "data/adult.data",
+    *,
+    max_samples: int | None = None,
+    random_state: int = 42,
+) -> DatasetBundle:
+    """Load the Adult dataset from a local CSV/TSV-like file."""
+    dataset_path = _resolve_data_path(path)
+    if not dataset_path.exists():
+        raise FileNotFoundError(
+            f"Adult dataset was not found at: {dataset_path}"
+        )
+
+    raw_data = _read_delimited_table(dataset_path)
+    if raw_data.shape[1] < 2:
+        raise ValueError("Adult dataset must contain at least one feature column and a label.")
+
+    X = _coerce_feature_matrix(raw_data[:, :-1])
+    y = _coerce_labels(raw_data[:, -1])
+    dataset = DatasetBundle(
+        name="adult",
+        X=X,
+        y=y,
+        source=str(dataset_path),
+        task="binary",
+        notes="Adult-income-style tabular dataset.",
+    )
+    return _sample_dataset(dataset, max_samples=max_samples, random_state=random_state)
+
+
+def load_covertype(
+    path: str | Path = "data/covertype.data",
+    *,
+    max_samples: int | None = None,
+    random_state: int = 42,
+) -> DatasetBundle:
+    """Load the Covertype dataset from a local CSV-like file."""
+    dataset_path = _resolve_data_path(path)
+    if not dataset_path.exists():
+        raise FileNotFoundError(
+            f"Covertype dataset was not found at: {dataset_path}"
+        )
+
+    raw_data = _read_delimited_table(dataset_path)
+    if raw_data.shape[1] < 2:
+        raise ValueError("Covertype dataset must contain at least one feature column and a label.")
+
+    X = _coerce_feature_matrix(raw_data[:, :-1])
+    y = _coerce_labels(raw_data[:, -1])
+    dataset = DatasetBundle(
+        name="covertype",
+        X=X,
+        y=y,
+        source=str(dataset_path),
+        task="multiclass",
+        notes="Forest cover-type tabular dataset.",
+    )
+    return _sample_dataset(dataset, max_samples=max_samples, random_state=random_state)
+
+
+def load_digits_dataset(
+    *,
+    sample_limit: int | None = None,
+    random_state: int = 42,
+) -> DatasetBundle:
+    """Load the handwritten-digits dataset from scikit-learn."""
+    from sklearn.datasets import load_digits
+
+    digits = load_digits()
+    X = np.asarray(digits.data, dtype=float)
+    y = np.asarray(digits.target, dtype=int)
+
+    if sample_limit is not None:
+        if sample_limit <= 0:
+            raise ValueError("sample_limit must be positive.")
+        sample_limit = min(sample_limit, X.shape[0])
+        rng = np.random.default_rng(random_state)
+        selected_indices = rng.choice(
+            X.shape[0],
+            size=sample_limit,
+            replace=False,
+        )
+        X = X[selected_indices]
+        y = y[selected_indices]
+
+    return DatasetBundle(
+        name="digits",
+        X=X,
+        y=y,
+        source="sklearn.datasets.load_digits",
+        task="multiclass",
+        notes="Handwritten-digits dataset from scikit-learn.",
+    )
+
+
+def load_project_datasets(
+    *,
+    names: tuple[str, ...] | list[str] = ("wdbc", "adult", "covertype"),
+    data_dir: str | Path = "data",
+    adult_max_samples: int | None = None,
+    covertype_max_samples: int | None = None,
+    mnist_max_samples: int | None = None,
+    mnist_digits: tuple[str, ...] | list[str] | None = None,
+    random_state: int = 42,
+) -> list[DatasetBundle]:
+    """Load one or more project datasets into DatasetBundle objects."""
+    data_directory = Path(data_dir)
+    datasets: list[DatasetBundle] = []
+
+    for name in names:
+        normalized_name = str(name).lower()
+        if normalized_name == "wdbc":
+            dataset = load_wdbc(data_directory / "wdbc.data")
+        elif normalized_name == "adult":
+            dataset = load_adult(
+                data_directory / "adult.data",
+                max_samples=adult_max_samples,
+                random_state=random_state,
+            )
+        elif normalized_name == "covertype":
+            dataset = load_covertype(
+                data_directory / "covertype.data",
+                max_samples=covertype_max_samples,
+                random_state=random_state,
+            )
+        elif normalized_name in {"mnist", "digits"}:
+            dataset = load_digits_dataset(
+                sample_limit=mnist_max_samples,
+                random_state=random_state,
+            )
+            if mnist_digits:
+                selected_digits = [int(digit) for digit in mnist_digits]
+                mask = np.isin(dataset.y, selected_digits)
+                dataset = DatasetBundle(
+                    name=f"digits_{'_'.join(str(d) for d in selected_digits)}",
+                    X=dataset.X[mask],
+                    y=np.array([selected_digits.index(int(label)) for label in dataset.y[mask]], dtype=int),
+                    source=dataset.source,
+                    task="binary",
+                    notes=f"Binary subset of digits with labels {selected_digits}.",
+                )
+        else:
+            raise ValueError(f"Unsupported dataset name: {name}")
+
+        datasets.append(dataset)
+
+    return datasets
 
 
 class MeanImputer:
