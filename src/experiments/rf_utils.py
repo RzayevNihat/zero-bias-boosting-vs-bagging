@@ -1,27 +1,25 @@
-"""Utility functions for Person 3 Random Forest experiments.
+"""Shared utilities for Person 3 Random Forest experiments.
 
-The helpers in this module keep experiment scripts short and reproducible.
-Scikit-learn is used only for datasets, metrics, preprocessing, and reference
-support. The project Random Forest implementation remains the from-scratch
-class in ``src.bagging.random_forest``.
+The helpers in this module keep dataset preparation, imbalance treatment,
+metric calculation, and result serialization reproducible. Scikit-learn is
+used only for datasets, preprocessing, metrics, and reference baselines; the
+project Random Forest implementation remains ``src.bagging.random_forest``.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Protocol
 
 import numpy as np
 import pandas as pd
 from sklearn.datasets import load_breast_cancer, load_digits, make_classification
-from sklearn.metrics import accuracy_score, f1_score, roc_auc_score
+from sklearn.metrics import accuracy_score, f1_score, recall_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 RANDOM_STATE = 42
-
-# repository/src/experiments/rf_utils.py -> repository root is parents[2]
 ROOT_DIR = Path(__file__).resolve().parents[2]
 FIGURES_DIR = ROOT_DIR / "figures"
 RESULTS_DIR = ROOT_DIR / "results"
@@ -30,7 +28,7 @@ DATA_DIR = ROOT_DIR / "data"
 
 @dataclass(frozen=True)
 class DatasetBundle:
-    """Container used by the Random Forest experiment scripts."""
+    """Dataset container shared by the experiment scripts."""
 
     name: str
     X: np.ndarray
@@ -40,95 +38,76 @@ class DatasetBundle:
 
     @property
     def minority_fraction(self) -> float:
-        """Return the fraction of samples in the smallest class."""
-        y_array = np.asarray(self.y)
-
-        if y_array.size == 0:
-            raise ValueError("Dataset bundle must contain at least one sample.")
-
-        _, counts = np.unique(y_array, return_counts=True)
+        """Return the smallest observed class fraction."""
+        _, counts = np.unique(self.y, return_counts=True)
         return float(counts.min() / counts.sum())
 
 
+class ClassifierProtocol(Protocol):
+    """Minimal classifier interface used by metric helpers."""
+
+    def predict(self, X: np.ndarray) -> np.ndarray: ...
+
+    def predict_proba(self, X: np.ndarray) -> np.ndarray: ...
+
+
 def ensure_output_dirs() -> None:
-    """Create root-level output folders for figures and result tables."""
+    """Create canonical root-level output directories."""
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def load_breast_cancer_bundle() -> DatasetBundle:
-    """Load the Breast Cancer Wisconsin binary dataset."""
+    """Load the Breast Cancer Wisconsin Diagnostic dataset."""
     data = load_breast_cancer()
-
     return DatasetBundle(
         name="breast_cancer",
         X=data.data.astype(float),
         y=data.target.astype(int),
-        description=(
-            "Breast Cancer Wisconsin Diagnostic dataset from "
-            "sklearn.datasets."
-        ),
+        description="Breast Cancer Wisconsin Diagnostic from sklearn.datasets.",
         is_binary=True,
     )
 
 
 def load_digits_binary_bundle() -> DatasetBundle:
-    """Load a high-dimensional binary subset of Digits: class 3 vs class 8."""
+    """Load a high-dimensional binary Digits subset (class 3 versus class 8)."""
     data = load_digits()
     mask = np.isin(data.target, [3, 8])
-
-    X = data.data[mask].astype(float)
-    y = (data.target[mask] == 8).astype(int)
-
     return DatasetBundle(
         name="digits_3_vs_8",
-        X=X,
-        y=y,
-        description=(
-            "Binary high-dimensional subset of sklearn Digits: "
-            "class 3 versus class 8."
-        ),
+        X=data.data[mask].astype(float),
+        y=(data.target[mask] == 8).astype(int),
+        description="High-dimensional 64-feature Digits subset: class 3 vs class 8.",
         is_binary=True,
     )
 
 
 def load_imbalanced_bundle() -> DatasetBundle:
-    """Load Covertype when available, otherwise create a 99:1 fallback.
+    """Load a real Covertype one-vs-rest task or an offline 99:1 fallback.
 
-    For the final report, the real downloaded dataset should be preferred.
-    The synthetic dataset exists only so offline smoke tests remain reproducible.
+    For the final report, place ``covtype.data`` in ``data/``. The synthetic
+    fallback is intended only for offline smoke tests and must be identified as
+    synthetic in any generated result table.
     """
     covtype_path = DATA_DIR / "covtype.data"
-
     if covtype_path.exists():
         columns = [f"feature_{index}" for index in range(54)] + ["target"]
-        dataframe = pd.read_csv(
-            covtype_path,
-            header=None,
-            names=columns,
-        )
-
-        dataframe = dataframe.sample(
-            n=min(5000, len(dataframe)),
-            random_state=RANDOM_STATE,
-        )
-
-        X = dataframe.iloc[:, :-1].to_numpy(dtype=float)
-        y = (dataframe["target"].to_numpy() == 4).astype(int)
-
+        frame = pd.read_csv(covtype_path, header=None, names=columns)
+        # Cover type 4 is rare. Keep up to 10,000 rows for manageable runtime.
+        frame = frame.sample(n=min(10_000, len(frame)), random_state=RANDOM_STATE)
+        X = frame.iloc[:, :-1].to_numpy(dtype=float)
+        y = (frame["target"].to_numpy() == 4).astype(int)
         return DatasetBundle(
             name="covertype_type4_imbalanced",
             X=X,
             y=y,
-            description=(
-                "Covertype one-vs-rest task with rare cover type 4 "
-                "as the positive class."
-            ),
+            description="Covertype one-vs-rest: cover type 4 as the positive class.",
             is_binary=True,
         )
 
     X, y = make_classification(
-        n_samples=1200,
+        n_samples=1_200,
         n_features=24,
         n_informative=10,
         n_redundant=4,
@@ -138,21 +117,20 @@ def load_imbalanced_bundle() -> DatasetBundle:
         class_sep=1.2,
         random_state=RANDOM_STATE,
     )
-
     return DatasetBundle(
         name="synthetic_imbalanced_99_1",
         X=X.astype(float),
         y=y.astype(int),
         description=(
-            "Offline fallback synthetic dataset with 99:1 imbalance. "
-            "Use the real Covertype dataset for final reported results."
+            "Offline synthetic 99:1 fallback. Replace it with data/covtype.data "
+            "before producing final report results."
         ),
         is_binary=True,
     )
 
 
 def load_default_bundles() -> list[DatasetBundle]:
-    """Return the default datasets used by Person 3 experiments."""
+    """Return the three datasets used by the Person 3 experiment suite."""
     return [
         load_breast_cancer_bundle(),
         load_digits_binary_bundle(),
@@ -167,33 +145,16 @@ def train_test_scaled_split(
     random_state: int = RANDOM_STATE,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Create a stratified split and fit scaling on training data only."""
-    X_array = np.asarray(X, dtype=float)
-    y_array = np.asarray(y)
-
-    if X_array.ndim != 2:
-        raise ValueError("X must be a two-dimensional array.")
-
-    if y_array.ndim != 1:
-        raise ValueError("y must be a one-dimensional array.")
-
-    if X_array.shape[0] != y_array.shape[0]:
-        raise ValueError("X and y must contain the same number of samples.")
-
-    if not 0.0 < test_size < 1.0:
-        raise ValueError("test_size must be between 0 and 1.")
-
     X_train, X_test, y_train, y_test = train_test_split(
-        X_array,
-        y_array,
+        X,
+        y,
         test_size=test_size,
-        stratify=y_array,
+        stratify=y,
         random_state=random_state,
     )
-
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
-
     return X_train_scaled, X_test_scaled, y_train, y_test
 
 
@@ -202,148 +163,81 @@ def random_oversample_minority(
     y: np.ndarray,
     random_state: int = RANDOM_STATE,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Balance classes by randomly oversampling minority classes."""
-    X_array = np.asarray(X)
-    y_array = np.asarray(y)
-
-    if X_array.ndim != 2:
-        raise ValueError("X must be a two-dimensional array.")
-
-    if y_array.ndim != 1:
-        raise ValueError("y must be a one-dimensional array.")
-
-    if X_array.shape[0] != y_array.shape[0]:
-        raise ValueError("X and y must contain the same number of samples.")
-
-    if y_array.size == 0:
-        raise ValueError("Cannot oversample an empty dataset.")
+    """Randomly oversample every minority class to the majority count."""
+    X = np.asarray(X, dtype=float)
+    y = np.asarray(y)
+    if X.ndim != 2 or y.ndim != 1 or len(X) != len(y):
+        raise ValueError("X must be 2D, y must be 1D, and lengths must match.")
 
     rng = np.random.default_rng(random_state)
-    classes, counts = np.unique(y_array, return_counts=True)
-    max_count = int(counts.max())
-
+    classes, counts = np.unique(y, return_counts=True)
+    target_count = int(counts.max())
     X_parts: list[np.ndarray] = []
     y_parts: list[np.ndarray] = []
 
     for class_label in classes:
-        indices = np.flatnonzero(y_array == class_label)
-
-        if indices.size < max_count:
-            sampled_indices = rng.choice(
-                indices,
-                size=max_count,
-                replace=True,
-            )
-        else:
-            sampled_indices = indices
-
-        X_parts.append(X_array[sampled_indices])
-        y_parts.append(y_array[sampled_indices])
+        indices = np.flatnonzero(y == class_label)
+        sampled_indices = (
+            rng.choice(indices, size=target_count, replace=True)
+            if len(indices) < target_count
+            else indices
+        )
+        X_parts.append(X[sampled_indices])
+        y_parts.append(y[sampled_indices])
 
     X_resampled = np.vstack(X_parts)
     y_resampled = np.concatenate(y_parts)
-    permutation = rng.permutation(y_resampled.shape[0])
-
-    return X_resampled[permutation], y_resampled[permutation]
+    order = rng.permutation(len(y_resampled))
+    return X_resampled[order], y_resampled[order]
 
 
 def prepare_bundle_split(
     bundle: DatasetBundle,
     apply_imbalance_treatment: bool = True,
     severe_threshold: float = 0.01,
-    test_size: float = 0.25,
-    random_state: int = RANDOM_STATE,
-) -> tuple[
-    np.ndarray,
-    np.ndarray,
-    np.ndarray,
-    np.ndarray,
-    str,
-]:
-    """Split, scale, and optionally treat severe class imbalance.
-
-    Standardization is fitted only on training data. Oversampling is also
-    applied only to the training split, so the test set remains unchanged.
-
-    Returns
-    -------
-    tuple
-        ``X_train, X_test, y_train, y_test, treatment_name``.
-    """
-    if not 0.0 <= severe_threshold <= 1.0:
-        raise ValueError("severe_threshold must be between 0 and 1.")
-
-    X_train, X_test, y_train, y_test = train_test_scaled_split(
-        bundle.X,
-        bundle.y,
-        test_size=test_size,
-        random_state=random_state,
-    )
-
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, str]:
+    """Split/scale a bundle and optionally oversample severe training imbalance."""
+    X_train, X_test, y_train, y_test = train_test_scaled_split(bundle.X, bundle.y)
     treatment = "none"
-
-    if (
-        apply_imbalance_treatment
-        and bundle.minority_fraction <= severe_threshold
-    ):
-        X_train, y_train = random_oversample_minority(
-            X_train,
-            y_train,
-            random_state=random_state,
-        )
+    if apply_imbalance_treatment and bundle.minority_fraction <= severe_threshold:
+        X_train, y_train = random_oversample_minority(X_train, y_train)
         treatment = "random_oversampling_train_only"
-
     return X_train, X_test, y_train, y_test, treatment
 
 
 def evaluate_classifier(
-    model: Any,
+    model: ClassifierProtocol,
     X_test: np.ndarray,
     y_test: np.ndarray,
 ) -> dict[str, float]:
-    """Compute accuracy, macro F1, and ROC-AUC when available."""
+    """Compute accuracy, macro F1, AUC-ROC, and minority-class recall."""
     y_pred = model.predict(X_test)
-
-    metrics: dict[str, float] = {
+    classes, counts = np.unique(y_test, return_counts=True)
+    minority_class = classes[int(np.argmin(counts))]
+    metrics = {
         "accuracy": float(accuracy_score(y_test, y_pred)),
-        "f1_macro": float(
-            f1_score(
+        "f1_macro": float(f1_score(y_test, y_pred, average="macro", zero_division=0)),
+        "minority_recall": float(
+            recall_score(
                 y_test,
                 y_pred,
+                labels=[minority_class],
                 average="macro",
                 zero_division=0,
             )
         ),
     }
 
-    if not hasattr(model, "predict_proba"):
-        metrics["auc_roc"] = float("nan")
-        return metrics
-
-    probabilities = np.asarray(model.predict_proba(X_test))
-
     try:
-        if probabilities.ndim != 2:
-            raise ValueError(
-                "predict_proba must return a two-dimensional array."
-            )
-
-        if probabilities.shape[1] == 2:
-            metrics["auc_roc"] = float(
-                roc_auc_score(y_test, probabilities[:, 1])
-            )
+        proba = model.predict_proba(X_test)
+        if proba.shape[1] == 2:
+            metrics["auc_roc"] = float(roc_auc_score(y_test, proba[:, 1]))
         else:
             metrics["auc_roc"] = float(
-                roc_auc_score(
-                    y_test,
-                    probabilities,
-                    multi_class="ovr",
-                    average="macro",
-                )
+                roc_auc_score(y_test, proba, multi_class="ovr", average="macro")
             )
-    except ValueError:
+    except (AttributeError, ValueError):
         metrics["auc_roc"] = float("nan")
-
     return metrics
 
 
@@ -352,56 +246,28 @@ def add_label_noise(
     noise_fraction: float,
     random_state: int = RANDOM_STATE,
 ) -> np.ndarray:
-    """Randomly flip a specified fraction of binary target labels."""
+    """Flip an exact fraction of labels in a binary target."""
+    y = np.asarray(y)
     if not 0.0 <= noise_fraction <= 1.0:
         raise ValueError("noise_fraction must be between 0 and 1.")
-
-    y_array = np.asarray(y)
-
-    if y_array.ndim != 1:
-        raise ValueError("y must be a one-dimensional array.")
-
-    classes = np.unique(y_array)
-
+    classes = np.unique(y)
     if classes.size != 2:
-        raise ValueError(
-            "add_label_noise currently supports binary targets only."
-        )
+        raise ValueError("add_label_noise supports binary targets only.")
 
-    noisy = y_array.copy()
-    n_flip = int(round(noise_fraction * noisy.shape[0]))
-
+    noisy = y.copy()
+    n_flip = int(round(noise_fraction * len(y)))
     if n_flip == 0:
         return noisy
 
     rng = np.random.default_rng(random_state)
-    flip_indices = rng.choice(
-        noisy.shape[0],
-        size=n_flip,
-        replace=False,
-    )
-
-    first_class, second_class = classes
-    noisy[flip_indices] = np.where(
-        noisy[flip_indices] == first_class,
-        second_class,
-        first_class,
-    )
-
+    indices = rng.choice(len(y), size=n_flip, replace=False)
+    noisy[indices] = np.where(noisy[indices] == classes[0], classes[1], classes[0])
     return noisy
 
 
-def save_results_table(
-    rows: list[dict[str, Any]],
-    filename: str,
-) -> Path:
-    """Save experiment rows as CSV and return the generated path."""
-    if not filename.lower().endswith(".csv"):
-        raise ValueError("filename must use the .csv extension.")
-
+def save_results_table(rows: list[dict], filename: str) -> Path:
+    """Save experiment records to the canonical root-level results directory."""
     ensure_output_dirs()
-
     output_path = RESULTS_DIR / filename
     pd.DataFrame(rows).to_csv(output_path, index=False)
-
     return output_path
