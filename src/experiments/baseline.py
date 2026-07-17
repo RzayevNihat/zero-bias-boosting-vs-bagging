@@ -42,6 +42,7 @@ def run_baseline_experiment(
         stratify=dataset.y,
     )
 
+    # Fit the scaler on the training split only to avoid data leakage.
     pipeline = PreprocessingPipeline()
     X_train_processed = pipeline.fit_transform(X_train)
     X_test_processed = pipeline.transform(X_test)
