@@ -2,9 +2,11 @@ import numpy as np
 import pytest
 
 from src.utils.preprocessing import (
+    DatasetBundle,
     MeanImputer,
     PreprocessingPipeline,
     StandardScaler,
+    load_project_datasets,
 )
 
 
@@ -184,3 +186,33 @@ def test_scaler_rejects_different_feature_count():
         match="same number of features",
     ):
         scaler.transform(X_test)
+
+
+def test_load_project_datasets_returns_dataset_bundle(tmp_path):
+    dataset_path = tmp_path / "wdbc.data"
+    dataset_path.write_text(
+        "1,M,1.0,2.0\n2,B,3.0,4.0\n",
+        encoding="utf-8",
+    )
+
+    bundles = load_project_datasets(
+        names=("wdbc",),
+        data_dir=tmp_path,
+    )
+
+    assert len(bundles) == 1
+    assert isinstance(bundles[0], DatasetBundle)
+    assert bundles[0].name == "wdbc"
+    assert bundles[0].X.shape == (2, 2)
+    assert np.array_equal(bundles[0].y, np.array([1, 0]))
+
+
+def test_load_wdbc_falls_back_to_sklearn_when_local_file_missing(tmp_path):
+    dataset = load_project_datasets(
+        names=("wdbc",),
+        data_dir=tmp_path,
+    )[0]
+
+    assert dataset.name == "wdbc"
+    assert dataset.X.shape[0] > 0
+    assert dataset.y.shape[0] > 0

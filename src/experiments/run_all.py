@@ -27,6 +27,10 @@ class Experiment:
 
 EXPERIMENTS = (
     Experiment(
+        name="Baseline",
+        module="src.experiments.baseline",
+    ),
+    Experiment(
         name="AdaBoost scaling",
         module="src.experiments.adaboost_scaling",
     ),
