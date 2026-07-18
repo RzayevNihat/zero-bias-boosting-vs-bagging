@@ -2,6 +2,8 @@
 
 import numpy as np
 import pytest
+import sklearn.datasets as sklearn_datasets
+import src.utils.preprocessing as preprocessing
 
 from src.utils.preprocessing import (
     DatasetBundle,
@@ -10,7 +12,9 @@ from src.utils.preprocessing import (
     StandardScaler,
     _coerce_feature_matrix,
     handle_missing_values,
+    load_digits_dataset,
     load_project_datasets,
+    load_wdbc,
     train_test_split,
 )
 
@@ -261,6 +265,20 @@ def test_load_wdbc_falls_back_to_sklearn_when_local_file_missing(tmp_path):
     assert dataset.y.shape[0] > 0
 
 
+def test_load_wdbc_accepts_directory_path(tmp_path):
+    dataset_path = tmp_path / "wdbc.data"
+    dataset_path.write_text(
+        "1,M,1.0,2.0\n2,B,3.0,4.0\n",
+        encoding="utf-8",
+    )
+
+    dataset = load_wdbc(tmp_path)
+
+    assert dataset.name == "wdbc"
+    assert dataset.X.shape == (2, 2)
+    assert np.array_equal(dataset.y, np.array([1, 0]))
+
+
 def test_load_adult_imputes_missing_features(tmp_path):
     dataset_path = tmp_path / "adult.data"
     dataset_path.write_text("?,0\n2,1\n", encoding="utf-8")
@@ -273,6 +291,43 @@ def test_load_adult_imputes_missing_features(tmp_path):
     assert dataset.name == "adult"
     assert not np.isnan(dataset.X).any()
     assert np.allclose(dataset.X[0, 0], 2.0)
+
+
+def test_load_covertype_passes_max_samples_to_reader(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "covertype.data"
+    dataset_path.write_text(
+        "0,0\n1,1\n2,2\n3,3\n",
+        encoding="utf-8",
+    )
+
+    calls = {}
+
+    def fake_read(path, *, max_rows=None):
+        calls["max_rows"] = max_rows
+        return np.array([["0", "0"], ["1", "1"], ["2", "2"], ["3", "3"]], dtype=str)
+
+    monkeypatch.setattr(preprocessing, "_read_delimited_table", fake_read)
+
+    dataset = preprocessing.load_covertype(dataset_path, max_samples=2)
+
+    assert dataset.X.shape[0] == 2
+    assert calls["max_rows"] == 2
+
+
+def test_load_digits_dataset_prefers_local_csv_when_available(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "digits.csv"
+    dataset_path.write_text("0,1,2\n1,3,4\n", encoding="utf-8")
+
+    def fail_load_digits():
+        raise AssertionError("scikit-learn fallback should not be used")
+
+    monkeypatch.setattr(sklearn_datasets, "load_digits", fail_load_digits)
+
+    dataset = load_digits_dataset(path=dataset_path)
+
+    assert dataset.name == "digits"
+    assert dataset.X.shape == (2, 2)
+    assert np.array_equal(dataset.y, np.array([0, 1]))
 
 
 def test_coerce_feature_matrix_encodes_categorical_values_consistently():
