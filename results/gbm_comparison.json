@@ -25,19 +25,13 @@
     "output_dir": "results",
     "figure_dir": "figures"
   },
-  "load_failures": [
-    {
-      "dataset": "mnist",
-      "status": "failed_to_load",
-      "error": "FileNotFoundError: MNIST was requested, but no local MNIST file is available in data. Runtime fetching from sklearn/OpenML is disabled for this project. Add a local MNIST subset file before enabling this dataset. Requested digits=('3', '8'), max_samples=1000."
-    }
-  ],
+  "load_failures": [],
   "datasets": {
     "wdbc": {
       "name": "wdbc",
-      "task": "binary_classification",
-      "source": "data\\wdbc.data",
-      "notes": "Wisconsin Diagnostic Breast Cancer dataset loaded from the local data directory; labels are M=1 and B=0.",
+      "task": "binary",
+      "source": "wdbc.data",
+      "notes": "Wisconsin Diagnostic Breast Cancer dataset.",
       "n_samples": 569,
       "n_features": 30,
       "class_counts": {
@@ -49,31 +43,45 @@
     },
     "adult": {
       "name": "adult",
-      "task": "binary_classification",
-      "source": "data\\adult.data; data\\adult.test",
-      "notes": "Adult Income local train/test files combined, rows with '?' removed, categorical features one-hot encoded. Dropped 3620 rows with missing values. Limited to at most 5000 samples.",
+      "task": "binary",
+      "source": "data\\adult.data",
+      "notes": "Adult-income-style tabular dataset.",
       "n_samples": 5000,
-      "n_features": 104,
+      "n_features": 14,
       "class_counts": {
-        "0": 3809,
-        "1": 1191
+        "0": 3779,
+        "1": 1221
       },
       "train_size": 4000,
       "test_size": 1000
     },
-    "covertype (1 vs 2)": {
-      "name": "covertype (1 vs 2)",
+    "covertype (1 vs 3)": {
+      "name": "covertype (1 vs 3)",
       "task": "binary_from_multiclass",
       "source": "data\\covtype.data",
-      "notes": "Covertype dataset loaded from the local data directory; original cover-type labels are kept. Random reservoir subset limited to at most 5000 samples. For the binary GBM bonus, kept the two largest classes only: 1 -> 0, 2 -> 1.",
-      "n_samples": 4257,
+      "notes": "Forest cover-type tabular dataset. For the binary GBM bonus, kept the two largest classes only: 1 -> 0, 3 -> 1.",
+      "n_samples": 2197,
       "n_features": 54,
       "class_counts": {
-        "0": 1800,
-        "1": 2457
+        "0": 948,
+        "1": 1249
       },
-      "train_size": 3405,
-      "test_size": 852
+      "train_size": 1757,
+      "test_size": 440
+    },
+    "mnist_3_vs_8": {
+      "name": "mnist_3_vs_8",
+      "task": "binary",
+      "source": "openml:mnist_784:1",
+      "notes": "MNIST binary subset containing digits 3 and 8.",
+      "n_samples": 1000,
+      "n_features": 784,
+      "class_counts": {
+        "0": 512,
+        "1": 488
+      },
+      "train_size": 800,
+      "test_size": 200
     }
   },
   "comparison_against_adaboost": {
@@ -146,121 +154,184 @@
       "challenger": "Gradient Boosting (ours, bonus)",
       "metrics": {
         "accuracy": {
-          "adaboost": 0.825,
-          "gradient_boosting": 0.831,
-          "improvement": 0.006000000000000005,
+          "adaboost": 0.85,
+          "gradient_boosting": 0.853,
+          "improvement": 0.0030000000000000027,
           "gbm_improves": true,
           "lower_is_better": false
         },
         "macro_precision": {
-          "adaboost": 0.774399135631767,
-          "gradient_boosting": 0.7949248259975726,
-          "improvement": 0.02052569036580565,
+          "adaboost": 0.8195989214694979,
+          "gradient_boosting": 0.8306726477120303,
+          "improvement": 0.011073726242532445,
           "gbm_improves": true,
           "lower_is_better": false
         },
         "macro_recall": {
-          "adaboost": 0.7002525419616665,
-          "gradient_boosting": 0.6969661880500231,
-          "improvement": -0.003286353911643447,
+          "adaboost": 0.7467473328129066,
+          "gradient_boosting": 0.7445680457975541,
+          "improvement": -0.0021792870153525268,
           "gbm_improves": false,
           "lower_is_better": false
         },
         "macro_f1": {
-          "adaboost": 0.7239638787018416,
-          "gradient_boosting": 0.7249165390268557,
-          "improvement": 0.0009526603250140653,
+          "adaboost": 0.7723630536130537,
+          "gradient_boosting": 0.7732709597116378,
+          "improvement": 0.0009079060985841547,
           "gbm_improves": true,
           "lower_is_better": false
         },
         "roc_auc": {
-          "adaboost": 0.8931852268466441,
-          "gradient_boosting": 0.8909630781446437,
-          "improvement": -0.002222148702000437,
+          "adaboost": 0.906981850117096,
+          "gradient_boosting": 0.8950391404284846,
+          "improvement": -0.01194270968861133,
           "gbm_improves": false,
           "lower_is_better": false
         },
         "log_loss": {
-          "adaboost": 0.33463674740361843,
-          "gradient_boosting": 0.3700177931158567,
-          "improvement": -0.03538104571223827,
+          "adaboost": 0.31531155765339897,
+          "gradient_boosting": 0.3685735230035771,
+          "improvement": -0.05326196535017813,
           "gbm_improves": false,
           "lower_is_better": true
         },
         "brier_score": {
-          "adaboost": 0.22128863078090696,
-          "gradient_boosting": 0.22856727051916456,
-          "improvement": -0.007278639738257597,
+          "adaboost": 0.20343218632249285,
+          "gradient_boosting": 0.2247721461038475,
+          "improvement": -0.02133995978135464,
           "gbm_improves": false,
           "lower_is_better": true
         },
         "expected_calibration_error": {
-          "adaboost": 0.0364312638799365,
-          "gradient_boosting": 0.06523853811311747,
-          "improvement": -0.028807274233180975,
+          "adaboost": 0.008779756088278958,
+          "gradient_boosting": 0.07935536187377436,
+          "improvement": -0.0705756057854954,
           "gbm_improves": false,
           "lower_is_better": true
         }
       }
     },
-    "covertype (1 vs 2)": {
+    "covertype (1 vs 3)": {
       "available": true,
       "reference": "AdaBoost (ours)",
       "challenger": "Gradient Boosting (ours, bonus)",
       "metrics": {
         "accuracy": {
-          "adaboost": 0.7816901408450704,
-          "gradient_boosting": 0.7910798122065728,
-          "improvement": 0.009389671361502372,
-          "gbm_improves": true,
+          "adaboost": 0.9977272727272727,
+          "gradient_boosting": 0.9977272727272727,
+          "improvement": 0.0,
+          "gbm_improves": false,
           "lower_is_better": false
         },
         "macro_precision": {
-          "adaboost": 0.7773552389705882,
-          "gradient_boosting": 0.787339120023945,
-          "improvement": 0.009983881053356791,
-          "gbm_improves": true,
+          "adaboost": 0.99800796812749,
+          "gradient_boosting": 0.99800796812749,
+          "improvement": 0.0,
+          "gbm_improves": false,
           "lower_is_better": false
         },
         "macro_recall": {
-          "adaboost": 0.7725948509485094,
-          "gradient_boosting": 0.7818428184281843,
-          "improvement": 0.009247967479674823,
-          "gbm_improves": true,
+          "adaboost": 0.9973684210526316,
+          "gradient_boosting": 0.9973684210526316,
+          "improvement": 0.0,
+          "gbm_improves": false,
           "lower_is_better": false
         },
         "macro_f1": {
-          "adaboost": 0.7745133750711439,
-          "gradient_boosting": 0.7840236517855617,
-          "improvement": 0.009510276714417731,
-          "gbm_improves": true,
+          "adaboost": 0.9976827347942636,
+          "gradient_boosting": 0.9976827347942636,
+          "improvement": 0.0,
+          "gbm_improves": false,
           "lower_is_better": false
         },
         "roc_auc": {
-          "adaboost": 0.8420025971093045,
-          "gradient_boosting": 0.8611167570009033,
-          "improvement": 0.019114159891598814,
-          "gbm_improves": true,
+          "adaboost": 0.9998526315789473,
+          "gradient_boosting": 0.9972210526315789,
+          "improvement": -0.0026315789473684292,
+          "gbm_improves": false,
           "lower_is_better": false
         },
         "log_loss": {
-          "adaboost": 0.4823243127301561,
-          "gradient_boosting": 0.48811783475693193,
-          "improvement": -0.005793522026775855,
+          "adaboost": 0.06279777543378812,
+          "gradient_boosting": 0.11126791115862715,
+          "improvement": -0.048470135724839034,
           "gbm_improves": false,
           "lower_is_better": true
         },
         "brier_score": {
-          "adaboost": 0.31544120736584386,
-          "gradient_boosting": 0.3136981411670003,
-          "improvement": 0.001743066198843568,
-          "gbm_improves": true,
+          "adaboost": 0.00454545454544548,
+          "gradient_boosting": 0.024057257061397917,
+          "improvement": -0.019511802515952435,
+          "gbm_improves": false,
           "lower_is_better": true
         },
         "expected_calibration_error": {
-          "adaboost": 0.030930475944233086,
-          "gradient_boosting": 0.07845570243397995,
-          "improvement": -0.047525226489746865,
+          "adaboost": 0.0022727271024109985,
+          "gradient_boosting": 0.09842182810606809,
+          "improvement": -0.09614910100365709,
+          "gbm_improves": false,
+          "lower_is_better": true
+        }
+      }
+    },
+    "mnist_3_vs_8": {
+      "available": true,
+      "reference": "AdaBoost (ours)",
+      "challenger": "Gradient Boosting (ours, bonus)",
+      "metrics": {
+        "accuracy": {
+          "adaboost": 0.965,
+          "gradient_boosting": 0.97,
+          "improvement": 0.0050000000000000044,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "macro_precision": {
+          "adaboost": 0.9656641604010026,
+          "gradient_boosting": 0.9699879951980792,
+          "improvement": 0.004323834797076653,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "macro_recall": {
+          "adaboost": 0.96468587434974,
+          "gradient_boosting": 0.9699879951980792,
+          "improvement": 0.0053021208483392535,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "macro_f1": {
+          "adaboost": 0.9649570724137069,
+          "gradient_boosting": 0.9699879951980792,
+          "improvement": 0.005030922784372338,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "roc_auc": {
+          "adaboost": 0.9943977591036415,
+          "gradient_boosting": 0.992296918767507,
+          "improvement": -0.0021008403361344463,
+          "gbm_improves": false,
+          "lower_is_better": false
+        },
+        "log_loss": {
+          "adaboost": 0.13675686621226094,
+          "gradient_boosting": 0.18990132413486815,
+          "improvement": -0.05314445792260722,
+          "gbm_improves": false,
+          "lower_is_better": true
+        },
+        "brier_score": {
+          "adaboost": 0.0558050336023387,
+          "gradient_boosting": 0.07969616012607811,
+          "improvement": -0.02389112652373941,
+          "gbm_improves": false,
+          "lower_is_better": true
+        },
+        "expected_calibration_error": {
+          "adaboost": 0.02879917377199561,
+          "gradient_boosting": 0.11343012030727456,
+          "improvement": -0.08463094653527894,
           "gbm_improves": false,
           "lower_is_better": true
         }
@@ -274,9 +345,9 @@
     "wdbc": {
       "dataset": {
         "name": "wdbc",
-        "task": "binary_classification",
-        "source": "data\\wdbc.data",
-        "notes": "Wisconsin Diagnostic Breast Cancer dataset loaded from the local data directory; labels are M=1 and B=0.",
+        "task": "binary",
+        "source": "wdbc.data",
+        "notes": "Wisconsin Diagnostic Breast Cancer dataset.",
         "n_samples": 569,
         "n_features": 30,
         "class_counts": {
@@ -292,7 +363,7 @@
           "role": "project_implementation",
           "note": "From-scratch discrete SAMME AdaBoost with weighted stumps.",
           "n_estimators": 100,
-          "training_time_seconds": 0.4664049999846611,
+          "training_time_seconds": 0.3849532999447547,
           "train_metrics": {
             "accuracy": 1.0,
             "macro_precision": 1.0,
@@ -319,7 +390,7 @@
           "role": "project_bonus",
           "note": "From-scratch binary GBM trained by logistic log-loss.",
           "n_estimators": 100,
-          "training_time_seconds": 1.2216551000019535,
+          "training_time_seconds": 0.9671180000295863,
           "train_metrics": {
             "accuracy": 0.989010989010989,
             "macro_precision": 0.9913793103448276,
@@ -357,7 +428,7 @@
           "role": "reference_only",
           "note": "Sanity-check baseline only; not used as the project implementation.",
           "n_estimators": 100,
-          "training_time_seconds": 0.37950710000586696,
+          "training_time_seconds": 0.29970019997563213,
           "train_metrics": {
             "accuracy": 1.0,
             "macro_precision": 1.0,
@@ -447,14 +518,14 @@
     "adult": {
       "dataset": {
         "name": "adult",
-        "task": "binary_classification",
-        "source": "data\\adult.data; data\\adult.test",
-        "notes": "Adult Income local train/test files combined, rows with '?' removed, categorical features one-hot encoded. Dropped 3620 rows with missing values. Limited to at most 5000 samples.",
+        "task": "binary",
+        "source": "data\\adult.data",
+        "notes": "Adult-income-style tabular dataset.",
         "n_samples": 5000,
-        "n_features": 104,
+        "n_features": 14,
         "class_counts": {
-          "0": 3809,
-          "1": 1191
+          "0": 3779,
+          "1": 1221
         },
         "train_size": 4000,
         "test_size": 1000
@@ -465,26 +536,26 @@
           "role": "project_implementation",
           "note": "From-scratch discrete SAMME AdaBoost with weighted stumps.",
           "n_estimators": 100,
-          "training_time_seconds": 2.0724767000065185,
+          "training_time_seconds": 0.40613369998754933,
           "train_metrics": {
-            "accuracy": 0.8525,
-            "macro_precision": 0.8224965238235333,
-            "macro_recall": 0.7427328619725042,
-            "macro_f1": 0.7701768197224126,
-            "roc_auc": 0.9058919874054296,
-            "log_loss": 0.31326532558153847,
-            "brier_score": 0.20120440809825044,
-            "expected_calibration_error": 0.01016808244328678
+            "accuracy": 0.84975,
+            "macro_precision": 0.8156637225348566,
+            "macro_recall": 0.7513090529752958,
+            "macro_f1": 0.7748589567222535,
+            "roc_auc": 0.9129080664750052,
+            "log_loss": 0.3068158032158348,
+            "brier_score": 0.19987897950523995,
+            "expected_calibration_error": 0.018017555573637586
           },
           "test_metrics": {
-            "accuracy": 0.825,
-            "macro_precision": 0.774399135631767,
-            "macro_recall": 0.7002525419616665,
-            "macro_f1": 0.7239638787018416,
-            "roc_auc": 0.8931852268466441,
-            "log_loss": 0.33463674740361843,
-            "brier_score": 0.22128863078090696,
-            "expected_calibration_error": 0.0364312638799365
+            "accuracy": 0.85,
+            "macro_precision": 0.8195989214694979,
+            "macro_recall": 0.7467473328129066,
+            "macro_f1": 0.7723630536130537,
+            "roc_auc": 0.906981850117096,
+            "log_loss": 0.31531155765339897,
+            "brier_score": 0.20343218632249285,
+            "expected_calibration_error": 0.008779756088278958
           }
         },
         "Gradient Boosting (ours, bonus)": {
@@ -492,36 +563,36 @@
           "role": "project_bonus",
           "note": "From-scratch binary GBM trained by logistic log-loss.",
           "n_estimators": 100,
-          "training_time_seconds": 9.955820900009712,
+          "training_time_seconds": 1.3626636000117287,
           "train_metrics": {
-            "accuracy": 0.8535,
-            "macro_precision": 0.830568611960556,
-            "macro_recall": 0.737620235065127,
-            "macro_f1": 0.7678081445453735,
-            "roc_auc": 0.9056335321653659,
-            "log_loss": 0.3535227553742166,
-            "brier_score": 0.21312867166884328,
-            "expected_calibration_error": 0.060487347431560694
+            "accuracy": 0.85175,
+            "macro_precision": 0.8270103124507864,
+            "macro_recall": 0.7446656831910657,
+            "macro_f1": 0.7724848424740489,
+            "roc_auc": 0.9095452435456451,
+            "log_loss": 0.3570716701607023,
+            "brier_score": 0.21596126938619928,
+            "expected_calibration_error": 0.07862663510953778
           },
           "test_metrics": {
-            "accuracy": 0.831,
-            "macro_precision": 0.7949248259975726,
-            "macro_recall": 0.6969661880500231,
-            "macro_f1": 0.7249165390268557,
-            "roc_auc": 0.8909630781446437,
-            "log_loss": 0.3700177931158567,
-            "brier_score": 0.22856727051916456,
-            "expected_calibration_error": 0.06523853811311747
+            "accuracy": 0.853,
+            "macro_precision": 0.8306726477120303,
+            "macro_recall": 0.7445680457975541,
+            "macro_f1": 0.7732709597116378,
+            "roc_auc": 0.8950391404284846,
+            "log_loss": 0.3685735230035771,
+            "brier_score": 0.2247721461038475,
+            "expected_calibration_error": 0.07935536187377436
           },
           "train_log_loss_curve": {
-            "first": 0.5420862523691206,
-            "last": 0.3535227553742166,
+            "first": 0.5492020636115997,
+            "last": 0.3570716701607023,
             "last5": [
-              0.35555594726127815,
-              0.35502838155365235,
-              0.35454890471060785,
-              0.35404118542775787,
-              0.3535227553742166
+              0.3594157057974584,
+              0.3588005314801536,
+              0.35819003337968414,
+              0.35758005646603436,
+              0.3570716701607023
             ]
           }
         },
@@ -530,26 +601,26 @@
           "role": "reference_only",
           "note": "Sanity-check baseline only; not used as the project implementation.",
           "n_estimators": 100,
-          "training_time_seconds": 2.138844200002495,
+          "training_time_seconds": 0.4474627000163309,
           "train_metrics": {
-            "accuracy": 0.8825,
-            "macro_precision": 0.8636099458441014,
-            "macro_recall": 0.7966778600801504,
-            "macro_f1": 0.822625177563519,
-            "roc_auc": 0.9368253431462527,
-            "log_loss": 0.2694076467988883,
-            "brier_score": 0.1659531842640099,
-            "expected_calibration_error": 0.025584969444609
+            "accuracy": 0.88125,
+            "macro_precision": 0.8596028553532267,
+            "macro_recall": 0.8040155125951804,
+            "macro_f1": 0.8263571400436063,
+            "roc_auc": 0.9427471947413738,
+            "log_loss": 0.263057897945468,
+            "brier_score": 0.1631935343198141,
+            "expected_calibration_error": 0.02534403341558504
           },
           "test_metrics": {
-            "accuracy": 0.843,
-            "macro_precision": 0.8028301140815608,
-            "macro_recall": 0.7322889785835593,
-            "macro_f1": 0.756956538565734,
-            "roc_auc": 0.9006842894638171,
-            "log_loss": 0.3231979146627669,
-            "brier_score": 0.2084773863732608,
-            "expected_calibration_error": 0.025682922781258034
+            "accuracy": 0.855,
+            "macro_precision": 0.8277673323035416,
+            "macro_recall": 0.7542176251192645,
+            "macro_f1": 0.7803399731257319,
+            "roc_auc": 0.9132649189001648,
+            "log_loss": 0.30908590805294456,
+            "brier_score": 0.1968298252403428,
+            "expected_calibration_error": 0.014496264149013227
           }
         }
       },
@@ -559,78 +630,78 @@
         "challenger": "Gradient Boosting (ours, bonus)",
         "metrics": {
           "accuracy": {
-            "adaboost": 0.825,
-            "gradient_boosting": 0.831,
-            "improvement": 0.006000000000000005,
+            "adaboost": 0.85,
+            "gradient_boosting": 0.853,
+            "improvement": 0.0030000000000000027,
             "gbm_improves": true,
             "lower_is_better": false
           },
           "macro_precision": {
-            "adaboost": 0.774399135631767,
-            "gradient_boosting": 0.7949248259975726,
-            "improvement": 0.02052569036580565,
+            "adaboost": 0.8195989214694979,
+            "gradient_boosting": 0.8306726477120303,
+            "improvement": 0.011073726242532445,
             "gbm_improves": true,
             "lower_is_better": false
           },
           "macro_recall": {
-            "adaboost": 0.7002525419616665,
-            "gradient_boosting": 0.6969661880500231,
-            "improvement": -0.003286353911643447,
+            "adaboost": 0.7467473328129066,
+            "gradient_boosting": 0.7445680457975541,
+            "improvement": -0.0021792870153525268,
             "gbm_improves": false,
             "lower_is_better": false
           },
           "macro_f1": {
-            "adaboost": 0.7239638787018416,
-            "gradient_boosting": 0.7249165390268557,
-            "improvement": 0.0009526603250140653,
+            "adaboost": 0.7723630536130537,
+            "gradient_boosting": 0.7732709597116378,
+            "improvement": 0.0009079060985841547,
             "gbm_improves": true,
             "lower_is_better": false
           },
           "roc_auc": {
-            "adaboost": 0.8931852268466441,
-            "gradient_boosting": 0.8909630781446437,
-            "improvement": -0.002222148702000437,
+            "adaboost": 0.906981850117096,
+            "gradient_boosting": 0.8950391404284846,
+            "improvement": -0.01194270968861133,
             "gbm_improves": false,
             "lower_is_better": false
           },
           "log_loss": {
-            "adaboost": 0.33463674740361843,
-            "gradient_boosting": 0.3700177931158567,
-            "improvement": -0.03538104571223827,
+            "adaboost": 0.31531155765339897,
+            "gradient_boosting": 0.3685735230035771,
+            "improvement": -0.05326196535017813,
             "gbm_improves": false,
             "lower_is_better": true
           },
           "brier_score": {
-            "adaboost": 0.22128863078090696,
-            "gradient_boosting": 0.22856727051916456,
-            "improvement": -0.007278639738257597,
+            "adaboost": 0.20343218632249285,
+            "gradient_boosting": 0.2247721461038475,
+            "improvement": -0.02133995978135464,
             "gbm_improves": false,
             "lower_is_better": true
           },
           "expected_calibration_error": {
-            "adaboost": 0.0364312638799365,
-            "gradient_boosting": 0.06523853811311747,
-            "improvement": -0.028807274233180975,
+            "adaboost": 0.008779756088278958,
+            "gradient_boosting": 0.07935536187377436,
+            "improvement": -0.0705756057854954,
             "gbm_improves": false,
             "lower_is_better": true
           }
         }
       }
     },
-    "covertype (1 vs 2)": {
+    "covertype (1 vs 3)": {
       "dataset": {
-        "name": "covertype (1 vs 2)",
+        "name": "covertype (1 vs 3)",
         "task": "binary_from_multiclass",
         "source": "data\\covtype.data",
-        "notes": "Covertype dataset loaded from the local data directory; original cover-type labels are kept. Random reservoir subset limited to at most 5000 samples. For the binary GBM bonus, kept the two largest classes only: 1 -> 0, 2 -> 1.",
-        "n_samples": 4257,
+        "notes": "Forest cover-type tabular dataset. For the binary GBM bonus, kept the two largest classes only: 1 -> 0, 3 -> 1.",
+        "n_samples": 2197,
         "n_features": 54,
         "class_counts": {
-          "0": 1800,
-          "1": 2457
+          "0": 948,
+          "1": 1249
         },
-        "train_size": 3405,
-        "test_size": 852
+        "train_size": 1757,
+        "test_size": 440
       },
       "models": {
         "AdaBoost (ours)": {
@@ -638,26 +709,26 @@
           "role": "project_implementation",
           "note": "From-scratch discrete SAMME AdaBoost with weighted stumps.",
           "n_estimators": 100,
-          "training_time_seconds": 2.620142699975986,
+          "training_time_seconds": 0.5708322999998927,
           "train_metrics": {
-            "accuracy": 0.7691629955947137,
-            "macro_precision": 0.7637733841463197,
-            "macro_recall": 0.7617790500424089,
-            "macro_f1": 0.7626747619236793,
-            "roc_auc": 0.8432269578739044,
-            "log_loss": 0.48344014793904916,
-            "brier_score": 0.3192007850644391,
-            "expected_calibration_error": 0.03386680147986009
+            "accuracy": 1.0,
+            "macro_precision": 1.0,
+            "macro_recall": 1.0,
+            "macro_f1": 1.0,
+            "roc_auc": 1.0,
+            "log_loss": 1.0005015218890914e-12,
+            "brier_score": 2.0024267410628775e-24,
+            "expected_calibration_error": 1.0004219674897286e-12
           },
           "test_metrics": {
-            "accuracy": 0.7816901408450704,
-            "macro_precision": 0.7773552389705882,
-            "macro_recall": 0.7725948509485094,
-            "macro_f1": 0.7745133750711439,
-            "roc_auc": 0.8420025971093045,
-            "log_loss": 0.4823243127301561,
-            "brier_score": 0.31544120736584386,
-            "expected_calibration_error": 0.030930475944233086
+            "accuracy": 0.9977272727272727,
+            "macro_precision": 0.99800796812749,
+            "macro_recall": 0.9973684210526316,
+            "macro_f1": 0.9976827347942636,
+            "roc_auc": 0.9998526315789473,
+            "log_loss": 0.06279777543378812,
+            "brier_score": 0.00454545454544548,
+            "expected_calibration_error": 0.0022727271024109985
           }
         },
         "Gradient Boosting (ours, bonus)": {
@@ -665,36 +736,36 @@
           "role": "project_bonus",
           "note": "From-scratch binary GBM trained by logistic log-loss.",
           "n_estimators": 100,
-          "training_time_seconds": 6.722718099976191,
+          "training_time_seconds": 0.9633831000537612,
           "train_metrics": {
-            "accuracy": 0.7829662261380324,
-            "macro_precision": 0.7782348910276151,
-            "macro_recall": 0.7752226463104326,
-            "macro_f1": 0.7765268041813008,
-            "roc_auc": 0.8662125388747526,
-            "log_loss": 0.4843440992568002,
-            "brier_score": 0.31100484290955355,
-            "expected_calibration_error": 0.07727461684660639
+            "accuracy": 0.9994308480364257,
+            "macro_precision": 0.9995,
+            "macro_recall": 0.9993403693931399,
+            "macro_f1": 0.9994198419341684,
+            "roc_auc": 0.9999986794182045,
+            "log_loss": 0.10714181664184741,
+            "brier_score": 0.021147428308351694,
+            "expected_calibration_error": 0.09999337080403692
           },
           "test_metrics": {
-            "accuracy": 0.7910798122065728,
-            "macro_precision": 0.787339120023945,
-            "macro_recall": 0.7818428184281843,
-            "macro_f1": 0.7840236517855617,
-            "roc_auc": 0.8611167570009033,
-            "log_loss": 0.48811783475693193,
-            "brier_score": 0.3136981411670003,
-            "expected_calibration_error": 0.07845570243397995
+            "accuracy": 0.9977272727272727,
+            "macro_precision": 0.99800796812749,
+            "macro_recall": 0.9973684210526316,
+            "macro_f1": 0.9976827347942636,
+            "roc_auc": 0.9972210526315789,
+            "log_loss": 0.11126791115862715,
+            "brier_score": 0.024057257061397917,
+            "expected_calibration_error": 0.09842182810606809
           },
           "train_log_loss_curve": {
-            "first": 0.6742322743773524,
-            "last": 0.4843440992568002,
+            "first": 0.6595355922050032,
+            "last": 0.10714181664184741,
             "last5": [
-              0.48681151468382666,
-              0.4862133937027905,
-              0.48561345509857484,
-              0.4850434123023083,
-              0.4843440992568002
+              0.11132598998952492,
+              0.1102505490303843,
+              0.10919505565525148,
+              0.10815898412009045,
+              0.10714181664184741
             ]
           }
         },
@@ -703,26 +774,26 @@
           "role": "reference_only",
           "note": "Sanity-check baseline only; not used as the project implementation.",
           "n_estimators": 100,
-          "training_time_seconds": 1.1243517000111751,
+          "training_time_seconds": 0.34466150001389906,
           "train_metrics": {
-            "accuracy": 0.8234948604992658,
-            "macro_precision": 0.8197061262340153,
-            "macro_recall": 0.8177586938083121,
-            "macro_f1": 0.8186597138881915,
-            "roc_auc": 0.9143612171331637,
-            "log_loss": 0.38746095346683307,
-            "brier_score": 0.24249976705192722,
-            "expected_calibration_error": 0.05651668429077211
+            "accuracy": 1.0,
+            "macro_precision": 1.0,
+            "macro_recall": 1.0,
+            "macro_f1": 1.0,
+            "roc_auc": 1.0,
+            "log_loss": 3.618606964291089e-05,
+            "brier_score": 1.1493696337177572e-07,
+            "expected_calibration_error": 3.6157159317484755e-05
           },
           "test_metrics": {
-            "accuracy": 0.7934272300469484,
-            "macro_precision": 0.790234203407856,
-            "macro_recall": 0.7835027100271003,
-            "macro_f1": 0.7860701343909607,
-            "roc_auc": 0.8768574977416441,
-            "log_loss": 0.44003307649473816,
-            "brier_score": 0.2840085344761,
-            "expected_calibration_error": 0.03513664590844162
+            "accuracy": 0.9977272727272727,
+            "macro_precision": 0.99800796812749,
+            "macro_recall": 0.9973684210526316,
+            "macro_f1": 0.9976827347942636,
+            "roc_auc": 0.9995052631578948,
+            "log_loss": 0.02391623456371153,
+            "brier_score": 0.004545209854419267,
+            "expected_calibration_error": 0.0022435802136803185
           }
         }
       },
@@ -732,58 +803,231 @@
         "challenger": "Gradient Boosting (ours, bonus)",
         "metrics": {
           "accuracy": {
-            "adaboost": 0.7816901408450704,
-            "gradient_boosting": 0.7910798122065728,
-            "improvement": 0.009389671361502372,
-            "gbm_improves": true,
+            "adaboost": 0.9977272727272727,
+            "gradient_boosting": 0.9977272727272727,
+            "improvement": 0.0,
+            "gbm_improves": false,
             "lower_is_better": false
           },
           "macro_precision": {
-            "adaboost": 0.7773552389705882,
-            "gradient_boosting": 0.787339120023945,
-            "improvement": 0.009983881053356791,
-            "gbm_improves": true,
+            "adaboost": 0.99800796812749,
+            "gradient_boosting": 0.99800796812749,
+            "improvement": 0.0,
+            "gbm_improves": false,
             "lower_is_better": false
           },
           "macro_recall": {
-            "adaboost": 0.7725948509485094,
-            "gradient_boosting": 0.7818428184281843,
-            "improvement": 0.009247967479674823,
-            "gbm_improves": true,
+            "adaboost": 0.9973684210526316,
+            "gradient_boosting": 0.9973684210526316,
+            "improvement": 0.0,
+            "gbm_improves": false,
             "lower_is_better": false
           },
           "macro_f1": {
-            "adaboost": 0.7745133750711439,
-            "gradient_boosting": 0.7840236517855617,
-            "improvement": 0.009510276714417731,
-            "gbm_improves": true,
+            "adaboost": 0.9976827347942636,
+            "gradient_boosting": 0.9976827347942636,
+            "improvement": 0.0,
+            "gbm_improves": false,
             "lower_is_better": false
           },
           "roc_auc": {
-            "adaboost": 0.8420025971093045,
-            "gradient_boosting": 0.8611167570009033,
-            "improvement": 0.019114159891598814,
-            "gbm_improves": true,
+            "adaboost": 0.9998526315789473,
+            "gradient_boosting": 0.9972210526315789,
+            "improvement": -0.0026315789473684292,
+            "gbm_improves": false,
             "lower_is_better": false
           },
           "log_loss": {
-            "adaboost": 0.4823243127301561,
-            "gradient_boosting": 0.48811783475693193,
-            "improvement": -0.005793522026775855,
+            "adaboost": 0.06279777543378812,
+            "gradient_boosting": 0.11126791115862715,
+            "improvement": -0.048470135724839034,
             "gbm_improves": false,
             "lower_is_better": true
           },
           "brier_score": {
-            "adaboost": 0.31544120736584386,
-            "gradient_boosting": 0.3136981411670003,
-            "improvement": 0.001743066198843568,
-            "gbm_improves": true,
+            "adaboost": 0.00454545454544548,
+            "gradient_boosting": 0.024057257061397917,
+            "improvement": -0.019511802515952435,
+            "gbm_improves": false,
             "lower_is_better": true
           },
           "expected_calibration_error": {
-            "adaboost": 0.030930475944233086,
-            "gradient_boosting": 0.07845570243397995,
-            "improvement": -0.047525226489746865,
+            "adaboost": 0.0022727271024109985,
+            "gradient_boosting": 0.09842182810606809,
+            "improvement": -0.09614910100365709,
+            "gbm_improves": false,
+            "lower_is_better": true
+          }
+        }
+      }
+    },
+    "mnist_3_vs_8": {
+      "dataset": {
+        "name": "mnist_3_vs_8",
+        "task": "binary",
+        "source": "openml:mnist_784:1",
+        "notes": "MNIST binary subset containing digits 3 and 8.",
+        "n_samples": 1000,
+        "n_features": 784,
+        "class_counts": {
+          "0": 512,
+          "1": 488
+        },
+        "train_size": 800,
+        "test_size": 200
+      },
+      "models": {
+        "AdaBoost (ours)": {
+          "status": "ok",
+          "role": "project_implementation",
+          "note": "From-scratch discrete SAMME AdaBoost with weighted stumps.",
+          "n_estimators": 100,
+          "training_time_seconds": 5.627782299998216,
+          "train_metrics": {
+            "accuracy": 1.0,
+            "macro_precision": 1.0,
+            "macro_recall": 1.0,
+            "macro_f1": 1.0,
+            "roc_auc": 1.0,
+            "log_loss": 0.0011959469907440701,
+            "brier_score": 5.243023515247953e-05,
+            "expected_calibration_error": 0.0011824811250034095
+          },
+          "test_metrics": {
+            "accuracy": 0.965,
+            "macro_precision": 0.9656641604010026,
+            "macro_recall": 0.96468587434974,
+            "macro_f1": 0.9649570724137069,
+            "roc_auc": 0.9943977591036415,
+            "log_loss": 0.13675686621226094,
+            "brier_score": 0.0558050336023387,
+            "expected_calibration_error": 0.02879917377199561
+          }
+        },
+        "Gradient Boosting (ours, bonus)": {
+          "status": "ok",
+          "role": "project_bonus",
+          "note": "From-scratch binary GBM trained by logistic log-loss.",
+          "n_estimators": 100,
+          "training_time_seconds": 18.181694399972912,
+          "train_metrics": {
+            "accuracy": 0.98125,
+            "macro_precision": 0.9811786109496032,
+            "macro_recall": 0.9813320825515948,
+            "macro_f1": 0.9812415293781098,
+            "roc_auc": 0.9982551594746717,
+            "log_loss": 0.16164040560662343,
+            "brier_score": 0.057779292897468595,
+            "expected_calibration_error": 0.11694913264034372
+          },
+          "test_metrics": {
+            "accuracy": 0.97,
+            "macro_precision": 0.9699879951980792,
+            "macro_recall": 0.9699879951980792,
+            "macro_f1": 0.9699879951980792,
+            "roc_auc": 0.992296918767507,
+            "log_loss": 0.18990132413486815,
+            "brier_score": 0.07969616012607811,
+            "expected_calibration_error": 0.11343012030727456
+          },
+          "train_log_loss_curve": {
+            "first": 0.6727614732159912,
+            "last": 0.16164040560662343,
+            "last5": [
+              0.1666752663400224,
+              0.1653899081991041,
+              0.1641335275878566,
+              0.1628481308302748,
+              0.16164040560662343
+            ]
+          }
+        },
+        "Gradient Boosting (sklearn reference only)": {
+          "status": "ok",
+          "role": "reference_only",
+          "note": "Sanity-check baseline only; not used as the project implementation.",
+          "n_estimators": 100,
+          "training_time_seconds": 2.750800900044851,
+          "train_metrics": {
+            "accuracy": 1.0,
+            "macro_precision": 1.0,
+            "macro_recall": 1.0,
+            "macro_f1": 1.0,
+            "roc_auc": 1.0,
+            "log_loss": 0.011659305375726339,
+            "brier_score": 0.0008442481350736295,
+            "expected_calibration_error": 0.011438366209737271
+          },
+          "test_metrics": {
+            "accuracy": 0.98,
+            "macro_precision": 0.9799919967987194,
+            "macro_recall": 0.9799919967987194,
+            "macro_f1": 0.9799919967987194,
+            "roc_auc": 0.9962985194077632,
+            "log_loss": 0.07008458914397075,
+            "brier_score": 0.03538011428445425,
+            "expected_calibration_error": 0.018978185691825942
+          }
+        }
+      },
+      "comparison_against_adaboost": {
+        "available": true,
+        "reference": "AdaBoost (ours)",
+        "challenger": "Gradient Boosting (ours, bonus)",
+        "metrics": {
+          "accuracy": {
+            "adaboost": 0.965,
+            "gradient_boosting": 0.97,
+            "improvement": 0.0050000000000000044,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "macro_precision": {
+            "adaboost": 0.9656641604010026,
+            "gradient_boosting": 0.9699879951980792,
+            "improvement": 0.004323834797076653,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "macro_recall": {
+            "adaboost": 0.96468587434974,
+            "gradient_boosting": 0.9699879951980792,
+            "improvement": 0.0053021208483392535,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "macro_f1": {
+            "adaboost": 0.9649570724137069,
+            "gradient_boosting": 0.9699879951980792,
+            "improvement": 0.005030922784372338,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "roc_auc": {
+            "adaboost": 0.9943977591036415,
+            "gradient_boosting": 0.992296918767507,
+            "improvement": -0.0021008403361344463,
+            "gbm_improves": false,
+            "lower_is_better": false
+          },
+          "log_loss": {
+            "adaboost": 0.13675686621226094,
+            "gradient_boosting": 0.18990132413486815,
+            "improvement": -0.05314445792260722,
+            "gbm_improves": false,
+            "lower_is_better": true
+          },
+          "brier_score": {
+            "adaboost": 0.0558050336023387,
+            "gradient_boosting": 0.07969616012607811,
+            "improvement": -0.02389112652373941,
+            "gbm_improves": false,
+            "lower_is_better": true
+          },
+          "expected_calibration_error": {
+            "adaboost": 0.02879917377199561,
+            "gradient_boosting": 0.11343012030727456,
+            "improvement": -0.08463094653527894,
             "gbm_improves": false,
             "lower_is_better": true
           }
