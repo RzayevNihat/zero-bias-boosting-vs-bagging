@@ -22,7 +22,7 @@ from sklearn.metrics import adjusted_rand_score
 from src.unsupervised.dbscan import DBSCAN
 from src.unsupervised.kmeans import KMeans
 from src.unsupervised.pca import PCA
-from src.utils.preprocessing import PreprocessingPipeline, load_digits_dataset
+from src.utils.preprocessing import PreprocessingPipeline, load_mnist_dataset
 
 
 RANDOM_STATE = 42
@@ -45,12 +45,15 @@ def load_dataset(
     random_state: int = RANDOM_STATE,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Load a reproducible subset of the digits dataset.
+    Load a reproducible subset of MNIST.
     """
     if sample_limit <= 0:
         raise ValueError("sample_limit must be positive.")
 
-    dataset = load_digits_dataset(sample_limit=sample_limit)
+    dataset = load_mnist_dataset(
+        sample_limit=sample_limit,
+        random_state=random_state,
+    )
 
     X = dataset.X
     y = dataset.y
@@ -278,7 +281,7 @@ def run_experiment(
     )
 
     results: dict[str, Any] = {
-        "dataset": "sklearn_digits",
+        "dataset": "mnist",
         "n_samples": int(X.shape[0]),
         "n_original_features": int(X.shape[1]),
         "pca_components": PCA_COMPONENTS,

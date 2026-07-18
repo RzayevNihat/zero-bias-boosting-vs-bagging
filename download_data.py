@@ -10,7 +10,7 @@ import urllib.request
 from pathlib import Path
 
 import numpy as np
-from sklearn.datasets import load_digits
+from sklearn.datasets import fetch_openml
 
 
 DEFAULT_DATASETS = {
@@ -42,7 +42,7 @@ def main() -> int:
     adult_path = data_dir / "adult.data"
     covertype_gz_path = data_dir / "covertype.data.gz"
     covertype_path = data_dir / "covertype.data"
-    digits_path = data_dir / "digits.csv"
+    mnist_path = data_dir / "mnist.csv"
 
     download(DEFAULT_DATASETS["wdbc"], wdbc_path)
     download(DEFAULT_DATASETS["adult"], adult_path)
@@ -53,11 +53,11 @@ def main() -> int:
         with gzip.open(covertype_gz_path, "rb") as source, covertype_path.open("wb") as target:
             shutil.copyfileobj(source, target)
 
-    if not digits_path.exists():
-        print(f"Creating {digits_path.name} from sklearn digits data")
-        digits = load_digits()
-        payload = np.column_stack([digits.target, digits.data])
-        np.savetxt(digits_path, payload, delimiter=",", fmt="%s")
+    if not mnist_path.exists():
+        print(f"Downloading MNIST from OpenML -> {mnist_path.name}")
+        mnist = fetch_openml("mnist_784", version=1, as_frame=False)
+        payload = np.column_stack([np.asarray(mnist.target, dtype=int), mnist.data])
+        np.savetxt(mnist_path, payload, delimiter=",", fmt="%s")
 
     print("Dataset download complete.")
     return 0

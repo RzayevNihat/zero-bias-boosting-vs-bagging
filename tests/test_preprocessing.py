@@ -12,7 +12,7 @@ from src.utils.preprocessing import (
     StandardScaler,
     _coerce_feature_matrix,
     handle_missing_values,
-    load_digits_dataset,
+    load_mnist_dataset,
     load_project_datasets,
     load_wdbc,
     train_test_split,
@@ -314,19 +314,20 @@ def test_load_covertype_passes_max_samples_to_reader(tmp_path, monkeypatch):
     assert calls["max_rows"] == 2
 
 
-def test_load_digits_dataset_prefers_local_csv_when_available(tmp_path, monkeypatch):
-    dataset_path = tmp_path / "digits.csv"
-    dataset_path.write_text("0,1,2\n1,3,4\n", encoding="utf-8")
+def test_load_mnist_dataset_prefers_local_csv_when_available(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "mnist.csv"
+    rows = [",".join([str(label), *([str(label)] * 784)]) for label in (0, 1)]
+    dataset_path.write_text("\n".join(rows) + "\n", encoding="utf-8")
 
-    def fail_load_digits():
-        raise AssertionError("scikit-learn fallback should not be used")
+    def fail_fetch_openml(*args, **kwargs):
+        raise AssertionError("OpenML fallback should not be used")
 
-    monkeypatch.setattr(sklearn_datasets, "load_digits", fail_load_digits)
+    monkeypatch.setattr(sklearn_datasets, "fetch_openml", fail_fetch_openml)
 
-    dataset = load_digits_dataset(path=dataset_path)
+    dataset = load_mnist_dataset(path=dataset_path)
 
-    assert dataset.name == "digits"
-    assert dataset.X.shape == (2, 2)
+    assert dataset.name == "mnist"
+    assert dataset.X.shape == (2, 784)
     assert np.array_equal(dataset.y, np.array([0, 1]))
 
 
