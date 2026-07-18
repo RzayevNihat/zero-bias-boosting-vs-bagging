@@ -161,7 +161,10 @@ zero-bias-boosting-vs-bagging/
 │
 ├── notebooks/                    # Jupyter notebooks for exploration
 │   ├── DecisionTreeNotebook.ipynb  # Decision Tree walkthrough
-│   └── exploration.ipynb           # Data exploration
+│   ├── adaboost.ipynb
+|   ├── final_comparison.ipynb
+|   └── random_forest_experiments.ipynb
+|
 │
 ├── data/                         # Dataset storage
 │   └── .gitkeep
