@@ -5,8 +5,9 @@ Shared preprocessing utilities for machine-learning experiments.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import gzip
 from pathlib import Path
-from typing import Any
+from typing import Any, TextIO
 
 import numpy as np
 from sklearn.model_selection import train_test_split as _sklearn_train_test_split
@@ -27,6 +28,10 @@ class Dataset:
 
     X: np.ndarray
     y: np.ndarray
+    name: str = "dataset"
+    task: str = "classification"
+    source: str = "unknown"
+    notes: str = ""
 
 
 @dataclass(frozen=True)
@@ -64,6 +69,61 @@ def handle_missing_values(X: np.ndarray) -> np.ndarray:
 def train_test_split(*args: Any, **kwargs: Any) -> Any:
     """Compatibility wrapper around sklearn's train_test_split."""
     return _sklearn_train_test_split(*args, **kwargs)
+
+
+def _resolve_test_size(n_samples: int, test_size: float | int) -> int:
+    """Resolve a fractional or absolute test size to a validated row count."""
+    if n_samples < 2:
+        raise ValueError("n_samples must be at least 2.")
+    if isinstance(test_size, (float, np.floating)):
+        if not 0.0 < float(test_size) < 1.0:
+            raise ValueError("A fractional test_size must be between 0 and 1.")
+        resolved = int(np.ceil(n_samples * float(test_size)))
+    elif isinstance(test_size, (int, np.integer)):
+        resolved = int(test_size)
+    else:
+        raise TypeError("test_size must be a float or integer.")
+    if resolved <= 0 or resolved >= n_samples:
+        raise ValueError("test_size must leave at least one training sample.")
+    return resolved
+
+
+def _open_text(path: str | Path) -> TextIO:
+    """Open plain-text or gzip-compressed dataset files as UTF-8 text."""
+    dataset_path = Path(path)
+    if dataset_path.suffix.lower() == ".gz":
+        return gzip.open(dataset_path, mode="rt", encoding="utf-8")
+    return dataset_path.open(mode="r", encoding="utf-8")
+
+
+def _normalise_dataset_name(name: str) -> str:
+    """Map accepted dataset aliases to their canonical project name."""
+    normalized = name.strip().lower().replace("-", "_").replace(" ", "_")
+    aliases = {
+        "adult_income": "adult",
+        "covtype": "covertype",
+        "covertype_subset": "covertype",
+        "digits": "mnist",
+        "mnist_binary": "mnist",
+    }
+    return aliases.get(normalized, normalized)
+
+
+def _subsample_rows(
+    X: np.ndarray,
+    y: np.ndarray,
+    max_samples: int | None,
+    *,
+    random_state: int = 42,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return a reproducible row subset without replacement."""
+    if max_samples is None or len(X) <= max_samples:
+        return X, y
+    if max_samples <= 0:
+        raise ValueError("max_samples must be positive.")
+    rng = np.random.default_rng(random_state)
+    indices = rng.choice(len(X), size=max_samples, replace=False)
+    return X[indices], y[indices]
 
 
 def _resolve_data_path(path: str | Path, *, data_dir: str | Path | None = None) -> Path:
@@ -114,6 +174,29 @@ def _read_delimited_table(path: str | Path, *, max_rows: int | None = None) -> n
     return raw_data
 
 
+def _read_adult_file(path: str | Path, *, max_rows: int | None = None) -> np.ndarray:
+    """Read an Adult-income data file, dropping blank rows."""
+    table = _read_delimited_table(path, max_rows=max_rows)
+    non_blank = np.any(np.char.strip(table.astype(str)) != "", axis=1)
+    return table[non_blank]
+
+
+def _read_numeric_csv_table(
+    path: str | Path,
+    *,
+    max_rows: int | None = None,
+) -> np.ndarray:
+    """Read and validate a numeric CSV dataset table."""
+    table = _read_delimited_table(path, max_rows=max_rows)
+    try:
+        numeric = table.astype(float)
+    except ValueError as error:
+        raise ValueError(f"Dataset at {path} must contain only numeric values.") from error
+    if not np.all(np.isfinite(numeric)):
+        raise ValueError(f"Dataset at {path} contains NaN or infinite values.")
+    return numeric
+
+
 def _coerce_feature_matrix(values: np.ndarray) -> np.ndarray:
     """Convert a text table to a numeric feature matrix."""
     features = np.asarray(values, dtype=str)
@@ -156,6 +239,11 @@ def _coerce_feature_matrix(values: np.ndarray) -> np.ndarray:
         raise ValueError("Feature matrix contains non-numeric values.")
 
     return matrix
+
+
+def _encode_mixed_feature_table(values: np.ndarray) -> np.ndarray:
+    """Encode mixed numeric/categorical features into a numeric matrix."""
+    return handle_missing_values(_coerce_feature_matrix(values))
 
 
 def _coerce_labels(values: np.ndarray) -> np.ndarray:
@@ -355,15 +443,19 @@ def load_covertype(
     return _sample_dataset(dataset, max_samples=max_samples, random_state=random_state)
 
 
-def load_digits_dataset(
+def load_mnist_dataset(
     *,
     path: str | Path | None = None,
     sample_limit: int | None = None,
     random_state: int = 42,
 ) -> DatasetBundle:
-    """Load the handwritten-digits dataset from a local CSV file when available."""
+    """Load MNIST from CSV, falling back to OpenML when no local file exists.
+
+    The expected CSV layout is the common MNIST layout: the label is the first
+    column and the remaining 784 columns are pixel values.
+    """
     if path is None:
-        candidate_paths = [Path("data/digits.csv"), Path("digits.csv")]
+        candidate_paths = [Path("data/mnist.csv"), Path("mnist.csv")]
         dataset_path = None
         for candidate in candidate_paths:
             if candidate.exists():
@@ -374,20 +466,20 @@ def load_digits_dataset(
 
     if dataset_path is not None and dataset_path.exists():
         raw_data = _read_delimited_table(dataset_path, max_rows=sample_limit)
-        if raw_data.shape[1] < 2:
-            raise ValueError("Digits dataset must contain at least one feature column and a label.")
-        X = _coerce_feature_matrix(raw_data[:, :-1])
-        y = _coerce_labels(raw_data[:, -1])
+        if raw_data.shape[1] != 785:
+            raise ValueError("MNIST CSV must contain one label and 784 pixel columns.")
+        X = _coerce_feature_matrix(raw_data[:, 1:])
+        y = _coerce_labels(raw_data[:, 0])
         source = str(dataset_path)
-        notes = "Handwritten-digits dataset from the local data directory."
+        notes = "MNIST handwritten digits from the local data directory."
     else:
-        from sklearn.datasets import load_digits
+        from sklearn.datasets import fetch_openml
 
-        digits = load_digits()
-        X = np.asarray(digits.data, dtype=float)
-        y = np.asarray(digits.target, dtype=int)
-        source = "sklearn.datasets.load_digits"
-        notes = "Handwritten-digits dataset from scikit-learn."
+        mnist = fetch_openml("mnist_784", version=1, as_frame=False)
+        X = np.asarray(mnist.data, dtype=float)
+        y = np.asarray(mnist.target, dtype=int)
+        source = "openml:mnist_784:1"
+        notes = "MNIST handwritten digits from OpenML."
 
     if sample_limit is not None:
         if sample_limit <= 0:
@@ -403,12 +495,82 @@ def load_digits_dataset(
         y = y[selected_indices]
 
     return DatasetBundle(
-        name="digits",
+        name="mnist",
         X=X,
         y=y,
         source=source,
         task="multiclass",
         notes=notes,
+    )
+
+
+def load_digits_dataset(
+    *,
+    path: str | Path | None = None,
+    sample_limit: int | None = None,
+    random_state: int = 42,
+) -> DatasetBundle:
+    """Backward-compatible alias for :func:`load_mnist_dataset`."""
+    return load_mnist_dataset(
+        path=path,
+        sample_limit=sample_limit,
+        random_state=random_state,
+    )
+
+
+def load_adult_income(
+    path: str | Path = "data/adult.data",
+    *,
+    max_samples: int | None = None,
+    random_state: int = 42,
+) -> DatasetBundle:
+    """Named project API for loading the Adult Income dataset."""
+    return load_adult(
+        path,
+        max_samples=max_samples,
+        random_state=random_state,
+    )
+
+
+def load_covertype_subset(
+    path: str | Path = "data/covertype.data",
+    *,
+    max_samples: int | None = 5000,
+    random_state: int = 42,
+) -> DatasetBundle:
+    """Load a reproducible subset of the Covertype dataset."""
+    return load_covertype(
+        path,
+        max_samples=max_samples,
+        random_state=random_state,
+    )
+
+
+def load_mnist_binary_subset(
+    *,
+    digits: tuple[int, int] = (3, 8),
+    path: str | Path | None = None,
+    max_samples: int | None = 1000,
+    random_state: int = 42,
+) -> DatasetBundle:
+    """Load two MNIST classes and encode them as binary labels 0 and 1."""
+    if len(digits) != 2 or digits[0] == digits[1]:
+        raise ValueError("digits must contain two distinct MNIST labels.")
+    if any(digit < 0 or digit > 9 for digit in digits):
+        raise ValueError("MNIST digits must be between 0 and 9.")
+
+    dataset = load_mnist_dataset(path=path, random_state=random_state)
+    mask = np.isin(dataset.y, digits)
+    X = dataset.X[mask]
+    y = np.where(dataset.y[mask] == digits[0], 0, 1).astype(int)
+    X, y = _subsample_rows(X, y, max_samples, random_state=random_state)
+    return DatasetBundle(
+        name=f"mnist_{digits[0]}_vs_{digits[1]}",
+        X=X,
+        y=y,
+        source=dataset.source,
+        task="binary",
+        notes=f"MNIST binary subset containing digits {digits[0]} and {digits[1]}.",
     )
 
 
@@ -427,7 +589,7 @@ def load_project_datasets(
     datasets: list[DatasetBundle] = []
 
     for name in names:
-        normalized_name = str(name).lower()
+        normalized_name = _normalise_dataset_name(str(name))
         if normalized_name == "wdbc":
             dataset = load_wdbc(
                 data_directory / "wdbc.data",
@@ -448,20 +610,19 @@ def load_project_datasets(
                 random_state=random_state,
             )
         elif normalized_name in {"mnist", "digits"}:
-            dataset = load_digits_dataset(
-                sample_limit=mnist_max_samples,
-                random_state=random_state,
-            )
             if mnist_digits:
                 selected_digits = [int(digit) for digit in mnist_digits]
-                mask = np.isin(dataset.y, selected_digits)
-                dataset = DatasetBundle(
-                    name=f"digits_{'_'.join(str(d) for d in selected_digits)}",
-                    X=dataset.X[mask],
-                    y=np.array([selected_digits.index(int(label)) for label in dataset.y[mask]], dtype=int),
-                    source=dataset.source,
-                    task="binary",
-                    notes=f"Binary subset of digits with labels {selected_digits}.",
+                if len(selected_digits) != 2:
+                    raise ValueError("mnist_digits must contain exactly two labels.")
+                dataset = load_mnist_binary_subset(
+                    digits=(selected_digits[0], selected_digits[1]),
+                    max_samples=mnist_max_samples,
+                    random_state=random_state,
+                )
+            else:
+                dataset = load_mnist_dataset(
+                    sample_limit=mnist_max_samples,
+                    random_state=random_state,
                 )
         else:
             raise ValueError(f"Unsupported dataset name: {name}")
