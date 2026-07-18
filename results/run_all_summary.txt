@@ -1,10 +1,11 @@
 Project experiment execution summary
 ======================================
 
-AdaBoost scaling: PASSED (34.12 seconds)
-Random Forest scaling: PASSED (9279.21 seconds)
-Noise robustness: PASSED (3237.73 seconds)
-Head-to-head comparison: PASSED (664.42 seconds)
-Bias-variance decomposition: PASSED (631.60 seconds)
-Gradient Boosting comparison: PASSED (70.61 seconds)
-Unsupervised analysis: PASSED (5.47 seconds)
+Baseline: PASSED (4.21 seconds)
+AdaBoost scaling: PASSED (13.21 seconds)
+Random Forest scaling: PASSED (4313.97 seconds)
+Noise robustness: PASSED (372.10 seconds)
+Head-to-head comparison: PASSED (382.00 seconds)
+Bias-variance decomposition: PASSED (502.58 seconds)
+Gradient Boosting comparison: PASSED (41.28 seconds)
+Unsupervised analysis: PASSED (8.63 seconds)
