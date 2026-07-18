@@ -409,7 +409,7 @@ def load_adult(
 
 
 def load_covertype(
-    path: str | Path = "data/covertype.data",
+    path: str | Path = "data/covtype.data",
     *,
     data_dir: str | Path | None = None,
     max_samples: int | None = None,
@@ -418,7 +418,7 @@ def load_covertype(
     """Load the Covertype dataset from a local CSV-like file."""
     dataset_path = _resolve_data_path(path, data_dir=data_dir)
     if dataset_path.exists() and dataset_path.is_dir():
-        dataset_path = dataset_path / "covertype.data"
+        dataset_path = dataset_path / "covtype.data"
 
     if not dataset_path.exists():
         raise FileNotFoundError(
@@ -533,7 +533,7 @@ def load_adult_income(
 
 
 def load_covertype_subset(
-    path: str | Path = "data/covertype.data",
+    path: str | Path = "data/covtype.data",
     *,
     max_samples: int | None = 5000,
     random_state: int = 42,
@@ -604,7 +604,7 @@ def load_project_datasets(
             )
         elif normalized_name == "covertype":
             dataset = load_covertype(
-                data_directory / "covertype.data",
+                data_directory / "covtype.data",
                 data_dir=data_directory,
                 max_samples=covertype_max_samples,
                 random_state=random_state,
