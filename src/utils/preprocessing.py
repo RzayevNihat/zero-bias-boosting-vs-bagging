@@ -336,15 +336,37 @@ def load_covertype(
 
 def load_digits_dataset(
     *,
+    path: str | Path | None = None,
     sample_limit: int | None = None,
     random_state: int = 42,
 ) -> DatasetBundle:
-    """Load the handwritten-digits dataset from scikit-learn."""
-    from sklearn.datasets import load_digits
+    """Load the handwritten-digits dataset from a local CSV file when available."""
+    if path is None:
+        candidate_paths = [Path("data/digits.csv"), Path("digits.csv")]
+        dataset_path = None
+        for candidate in candidate_paths:
+            if candidate.exists():
+                dataset_path = candidate
+                break
+    else:
+        dataset_path = _resolve_data_path(path)
 
-    digits = load_digits()
-    X = np.asarray(digits.data, dtype=float)
-    y = np.asarray(digits.target, dtype=int)
+    if dataset_path is not None and dataset_path.exists():
+        raw_data = _read_delimited_table(dataset_path)
+        if raw_data.shape[1] < 2:
+            raise ValueError("Digits dataset must contain at least one feature column and a label.")
+        X = _coerce_feature_matrix(raw_data[:, :-1])
+        y = _coerce_labels(raw_data[:, -1])
+        source = str(dataset_path)
+        notes = "Handwritten-digits dataset from the local data directory."
+    else:
+        from sklearn.datasets import load_digits
+
+        digits = load_digits()
+        X = np.asarray(digits.data, dtype=float)
+        y = np.asarray(digits.target, dtype=int)
+        source = "sklearn.datasets.load_digits"
+        notes = "Handwritten-digits dataset from scikit-learn."
 
     if sample_limit is not None:
         if sample_limit <= 0:
@@ -363,9 +385,9 @@ def load_digits_dataset(
         name="digits",
         X=X,
         y=y,
-        source="sklearn.datasets.load_digits",
+        source=source,
         task="multiclass",
-        notes="Handwritten-digits dataset from scikit-learn.",
+        notes=notes,
     )
 
 

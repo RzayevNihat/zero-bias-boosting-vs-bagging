@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+import sklearn.datasets as sklearn_datasets
 
 from src.utils.preprocessing import (
     DatasetBundle,
@@ -10,6 +11,7 @@ from src.utils.preprocessing import (
     StandardScaler,
     _coerce_feature_matrix,
     handle_missing_values,
+    load_digits_dataset,
     load_project_datasets,
     train_test_split,
 )
@@ -273,6 +275,22 @@ def test_load_adult_imputes_missing_features(tmp_path):
     assert dataset.name == "adult"
     assert not np.isnan(dataset.X).any()
     assert np.allclose(dataset.X[0, 0], 2.0)
+
+
+def test_load_digits_dataset_prefers_local_csv_when_available(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "digits.csv"
+    dataset_path.write_text("0,1,2\n1,3,4\n", encoding="utf-8")
+
+    def fail_load_digits():
+        raise AssertionError("scikit-learn fallback should not be used")
+
+    monkeypatch.setattr(sklearn_datasets, "load_digits", fail_load_digits)
+
+    dataset = load_digits_dataset(path=dataset_path)
+
+    assert dataset.name == "digits"
+    assert dataset.X.shape == (2, 2)
+    assert np.array_equal(dataset.y, np.array([0, 1]))
 
 
 def test_coerce_feature_matrix_encodes_categorical_values_consistently():
