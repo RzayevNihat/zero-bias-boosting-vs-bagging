@@ -14,10 +14,12 @@ from typing import Protocol
 
 import numpy as np
 import pandas as pd
-from sklearn.datasets import load_breast_cancer, load_digits, make_classification
+from sklearn.datasets import load_breast_cancer, make_classification
 from sklearn.metrics import accuracy_score, f1_score, recall_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+
+from src.utils.preprocessing import load_mnist_binary_subset
 
 RANDOM_STATE = 42
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -70,17 +72,26 @@ def load_breast_cancer_bundle() -> DatasetBundle:
     )
 
 
-def load_digits_binary_bundle() -> DatasetBundle:
-    """Load a high-dimensional binary Digits subset (class 3 versus class 8)."""
-    data = load_digits()
-    mask = np.isin(data.target, [3, 8])
+def load_mnist_binary_bundle() -> DatasetBundle:
+    """Load a high-dimensional binary MNIST subset (class 3 versus class 8)."""
+    data = load_mnist_binary_subset(
+        digits=(3, 8),
+        path=DATA_DIR / "mnist.csv" if (DATA_DIR / "mnist.csv").exists() else None,
+        max_samples=1000,
+        random_state=RANDOM_STATE,
+    )
     return DatasetBundle(
-        name="digits_3_vs_8",
-        X=data.data[mask].astype(float),
-        y=(data.target[mask] == 8).astype(int),
-        description="High-dimensional 64-feature Digits subset: class 3 vs class 8.",
+        name="mnist_3_vs_8",
+        X=data.X.astype(float),
+        y=data.y.astype(int),
+        description="High-dimensional 784-feature MNIST subset: class 3 vs class 8.",
         is_binary=True,
     )
+
+
+def load_digits_binary_bundle() -> DatasetBundle:
+    """Backward-compatible name for the MNIST 3-vs-8 bundle."""
+    return load_mnist_binary_bundle()
 
 
 def load_imbalanced_bundle() -> DatasetBundle:
@@ -133,7 +144,7 @@ def load_default_bundles() -> list[DatasetBundle]:
     """Return the three datasets used by the Person 3 experiment suite."""
     return [
         load_breast_cancer_bundle(),
-        load_digits_binary_bundle(),
+        load_mnist_binary_bundle(),
         load_imbalanced_bundle(),
     ]
 
