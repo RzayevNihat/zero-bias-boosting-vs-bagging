@@ -26,6 +26,7 @@ from src.experiments.rf_utils import (
     RANDOM_STATE,
     ensure_output_dirs,
     evaluate_classifier,
+    load_breast_cancer_bundle,
     load_default_bundles,
     prepare_bundle_split,
     save_results_table,
@@ -177,7 +178,7 @@ def main() -> None:
 
     ensure_output_dirs()
     if args.fast:
-        bundles = load_default_bundles()[:1]
+        bundles = [load_breast_cancer_bundle()]
         estimator_rows = run_n_estimators_sweep(
             estimator_values=[1, 3, 5],
             n_jobs=args.n_jobs,

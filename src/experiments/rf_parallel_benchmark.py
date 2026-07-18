@@ -20,7 +20,7 @@ from src.experiments.rf_utils import (
     DatasetBundle,
     ensure_output_dirs,
     evaluate_classifier,
-    load_digits_binary_bundle,
+    load_mnist_binary_bundle,
     prepare_bundle_split,
     save_results_table,
 )
@@ -33,7 +33,7 @@ def run_parallel_benchmark(
 ) -> list[dict]:
     """Benchmark fit time and confirm prediction quality for each worker count."""
     if bundle is None:
-        bundle = load_digits_binary_bundle()
+        bundle = load_mnist_binary_bundle()
     X_train, X_test, y_train, y_test, treatment = prepare_bundle_split(bundle)
 
     rows: list[dict] = []

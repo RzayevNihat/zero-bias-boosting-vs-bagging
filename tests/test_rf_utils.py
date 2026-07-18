@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from src.experiments.rf_utils import (
     DatasetBundle,
     add_label_noise,
+    load_breast_cancer_bundle,
+    load_mnist_binary_bundle,
     prepare_bundle_split,
     random_oversample_minority,
 )
@@ -44,3 +47,38 @@ def test_prepare_bundle_treats_severe_imbalance_train_only():
     assert test_counts[0] != test_counts[1]
     assert len(X_train) == len(y_train)
     assert len(X_test) == len(y_test)
+
+
+def test_load_breast_cancer_bundle_reads_local_wdbc(tmp_path):
+    data_path = tmp_path / "wdbc.data"
+    data_path.write_text(
+        "1001,M,1.0,2.0,3.0\n"
+        "1002,B,4.0,5.0,6.0\n"
+        "1003,M,7.0,8.0,9.0\n",
+        encoding="utf-8",
+    )
+
+    bundle = load_breast_cancer_bundle(data_path)
+
+    assert bundle.name == "breast_cancer_wdbc"
+    assert bundle.X.shape == (3, 3)
+    assert bundle.y.tolist() == [1, 0, 1]
+
+
+def test_load_mnist_bundle_reads_local_npz(tmp_path):
+    data_path = tmp_path / "mnist_3_vs_8.npz"
+    X = np.arange(24, dtype=np.float32).reshape(3, 8)
+    y = np.array([0, 1, 0], dtype=np.int8)
+    np.savez_compressed(data_path, X=X, y=y)
+
+    bundle = load_mnist_binary_bundle(data_path)
+
+    assert bundle.name == "mnist_3_vs_8"
+    assert bundle.X.shape == (3, 8)
+    np.testing.assert_array_equal(bundle.y, y)
+
+
+def test_local_loader_has_clear_missing_file_error(tmp_path):
+    missing_path = tmp_path / "missing.npz"
+    with pytest.raises(FileNotFoundError, match="download_data.sh"):
+        load_mnist_binary_bundle(missing_path)

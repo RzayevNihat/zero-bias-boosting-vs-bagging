@@ -1,9 +1,13 @@
 """Shared utilities for Person 3 Random Forest experiments.
 
-The helpers in this module keep dataset preparation, imbalance treatment,
-metric calculation, and result serialization reproducible. Scikit-learn is
-used only for datasets, preprocessing, metrics, and reference baselines; the
-project Random Forest implementation remains ``src.bagging.random_forest``.
+Dataset loading in this module is intentionally file-based. The experiment
+modules read the project datasets from the repository-level ``data/`` folder;
+they do not call ``sklearn.datasets`` at runtime. Run ``download_data.sh`` once
+to prepare the required local files.
+
+Scikit-learn is used only for train/test splitting, standardization, and
+metrics. The project Random Forest implementation remains
+``src.bagging.random_forest``.
 """
 
 from __future__ import annotations
@@ -14,10 +18,11 @@ from typing import Protocol
 
 import numpy as np
 import pandas as pd
-from sklearn.datasets import load_breast_cancer, load_digits, make_classification
 from sklearn.metrics import accuracy_score, f1_score, recall_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+
+from src.utils.preprocessing import load_wdbc
 
 RANDOM_STATE = 42
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -39,6 +44,8 @@ class DatasetBundle:
     @property
     def minority_fraction(self) -> float:
         """Return the smallest observed class fraction."""
+        if self.y.size == 0:
+            raise ValueError("Dataset target cannot be empty.")
         _, counts = np.unique(self.y, return_counts=True)
         return float(counts.min() / counts.sum())
 
@@ -58,82 +65,178 @@ def ensure_output_dirs() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def load_breast_cancer_bundle() -> DatasetBundle:
-    """Load the Breast Cancer Wisconsin Diagnostic dataset."""
-    data = load_breast_cancer()
-    return DatasetBundle(
-        name="breast_cancer",
-        X=data.data.astype(float),
-        y=data.target.astype(int),
-        description="Breast Cancer Wisconsin Diagnostic from sklearn.datasets.",
-        is_binary=True,
-    )
-
-
-def load_digits_binary_bundle() -> DatasetBundle:
-    """Load a high-dimensional binary Digits subset (class 3 versus class 8)."""
-    data = load_digits()
-    mask = np.isin(data.target, [3, 8])
-    return DatasetBundle(
-        name="digits_3_vs_8",
-        X=data.data[mask].astype(float),
-        y=(data.target[mask] == 8).astype(int),
-        description="High-dimensional 64-feature Digits subset: class 3 vs class 8.",
-        is_binary=True,
-    )
-
-
-def load_imbalanced_bundle() -> DatasetBundle:
-    """Load a real Covertype one-vs-rest task or an offline 99:1 fallback.
-
-    For the final report, place ``covtype.data`` in ``data/``. The synthetic
-    fallback is intended only for offline smoke tests and must be identified as
-    synthetic in any generated result table.
-    """
-    covtype_path = DATA_DIR / "covtype.data"
-    if covtype_path.exists():
-        columns = [f"feature_{index}" for index in range(54)] + ["target"]
-        frame = pd.read_csv(covtype_path, header=None, names=columns)
-        # Cover type 4 is rare. Keep up to 10,000 rows for manageable runtime.
-        frame = frame.sample(n=min(10_000, len(frame)), random_state=RANDOM_STATE)
-        X = frame.iloc[:, :-1].to_numpy(dtype=float)
-        y = (frame["target"].to_numpy() == 4).astype(int)
-        return DatasetBundle(
-            name="covertype_type4_imbalanced",
-            X=X,
-            y=y,
-            description="Covertype one-vs-rest: cover type 4 as the positive class.",
-            is_binary=True,
+def _required_data_path(path: str | Path, dataset_name: str) -> Path:
+    """Return an existing dataset path or raise a useful setup error."""
+    dataset_path = Path(path)
+    if not dataset_path.exists():
+        raise FileNotFoundError(
+            f"{dataset_name} dataset was not found at: {dataset_path}. "
+            "Run 'bash download_data.sh' from the repository root first."
         )
+    return dataset_path
 
-    X, y = make_classification(
-        n_samples=1_200,
-        n_features=24,
-        n_informative=10,
-        n_redundant=4,
-        n_clusters_per_class=2,
-        weights=[0.99, 0.01],
-        flip_y=0.0,
-        class_sep=1.2,
-        random_state=RANDOM_STATE,
+
+def _validate_bundle_arrays(
+    X: np.ndarray,
+    y: np.ndarray,
+    dataset_name: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Validate and normalize arrays loaded from a local dataset file."""
+    X_array = np.asarray(X, dtype=float)
+    y_array = np.asarray(y)
+
+    if X_array.ndim != 2:
+        raise ValueError(f"{dataset_name}: X must be a two-dimensional array.")
+    if y_array.ndim != 1:
+        raise ValueError(f"{dataset_name}: y must be a one-dimensional array.")
+    if X_array.shape[0] != y_array.shape[0]:
+        raise ValueError(f"{dataset_name}: X and y sample counts must match.")
+    if X_array.shape[0] == 0 or X_array.shape[1] == 0:
+        raise ValueError(f"{dataset_name}: dataset cannot be empty.")
+    if not np.all(np.isfinite(X_array)):
+        raise ValueError(f"{dataset_name}: X contains NaN or infinite values.")
+
+    return X_array, y_array
+
+
+def load_breast_cancer_bundle(
+    path: str | Path | None = None,
+) -> DatasetBundle:
+    """Load the local Wisconsin Diagnostic Breast Cancer raw file.
+
+    Expected file: ``data/wdbc.data``. The existing project loader encodes
+    malignant as 1 and benign as 0.
+    """
+    dataset_path = _required_data_path(
+        DATA_DIR / "wdbc.data" if path is None else path,
+        "Breast Cancer Wisconsin Diagnostic",
     )
+    dataset = load_wdbc(dataset_path)
+    X, y = _validate_bundle_arrays(dataset.X, dataset.y, "WDBC")
+
     return DatasetBundle(
-        name="synthetic_imbalanced_99_1",
-        X=X.astype(float),
+        name="breast_cancer_wdbc",
+        X=X,
         y=y.astype(int),
         description=(
-            "Offline synthetic 99:1 fallback. Replace it with data/covtype.data "
-            "before producing final report results."
+            "Wisconsin Diagnostic Breast Cancer loaded from data/wdbc.data; "
+            "malignant=1 and benign=0."
+        ),
+        is_binary=True,
+    )
+
+
+def load_mnist_binary_bundle(
+    path: str | Path | None = None,
+) -> DatasetBundle:
+    """Load the local high-dimensional MNIST class 3 vs class 8 subset.
+
+    Expected file: ``data/mnist_3_vs_8.npz`` with arrays named ``X`` and ``y``.
+    The download script creates a deterministic balanced 5,000-sample subset,
+    encodes digit 3 as 0, and digit 8 as 1.
+    """
+    dataset_path = _required_data_path(
+        DATA_DIR / "mnist_3_vs_8.npz" if path is None else path,
+        "MNIST 3-vs-8",
+    )
+
+    try:
+        with np.load(dataset_path, allow_pickle=False) as archive:
+            if "X" not in archive or "y" not in archive:
+                raise ValueError("MNIST NPZ file must contain arrays named X and y.")
+            X, y = _validate_bundle_arrays(
+                archive["X"],
+                archive["y"],
+                "MNIST 3-vs-8",
+            )
+    except (OSError, ValueError) as error:
+        raise ValueError(
+            f"Could not read a valid MNIST subset from: {dataset_path}"
+        ) from error
+
+    y = y.astype(int)
+    if not np.array_equal(np.unique(y), np.array([0, 1])):
+        raise ValueError("MNIST 3-vs-8 target must contain exactly labels 0 and 1.")
+
+    return DatasetBundle(
+        name="mnist_3_vs_8",
+        X=X,
+        y=y,
+        description=(
+            "Local 5,000-sample MNIST binary subset with 784 features: "
+            "digit 3 versus digit 8."
+        ),
+        is_binary=True,
+    )
+
+
+def load_imbalanced_bundle(
+    path: str | Path | None = None,
+    max_samples: int = 10_000,
+) -> DatasetBundle:
+    """Load a local Covertype type-4 one-vs-rest task.
+
+    ``download_data.sh`` normally creates ``data/covtype.data`` and keeps the
+    compressed ``data/covtype.data.gz`` file as well. This loader accepts either
+    format. It uses a deterministic subset for manageable from-scratch runtime.
+    No synthetic fallback is used: missing real data raises ``FileNotFoundError``.
+    """
+    if max_samples < 2:
+        raise ValueError("max_samples must be at least 2.")
+
+    if path is None:
+        extracted_path = DATA_DIR / "covtype.data"
+        compressed_path = DATA_DIR / "covtype.data.gz"
+        candidate = extracted_path if extracted_path.exists() else compressed_path
+    else:
+        candidate = Path(path)
+
+    dataset_path = _required_data_path(candidate, "Covertype")
+    columns = [f"feature_{index}" for index in range(54)] + ["target"]
+
+    frame = pd.read_csv(
+        dataset_path,
+        header=None,
+        names=columns,
+        compression="infer",
+    )
+    if frame.empty:
+        raise ValueError("Covertype dataset cannot be empty.")
+
+    sample_size = min(max_samples, len(frame))
+    if sample_size < len(frame):
+        frame = frame.sample(n=sample_size, random_state=RANDOM_STATE)
+
+    X, raw_target = _validate_bundle_arrays(
+        frame.iloc[:, :-1].to_numpy(dtype=float),
+        frame["target"].to_numpy(),
+        "Covertype",
+    )
+    y = (raw_target.astype(int) == 4).astype(int)
+
+    if np.unique(y).size != 2:
+        raise ValueError(
+            "The selected Covertype subset does not contain both type 4 and "
+            "non-type-4 samples. Increase max_samples or check the source file."
+        )
+
+    return DatasetBundle(
+        name="covertype_type4_imbalanced",
+        X=X,
+        y=y,
+        description=(
+            f"Local Covertype deterministic subset ({len(y)} rows), one-vs-rest: "
+            "cover type 4 is the positive minority class."
         ),
         is_binary=True,
     )
 
 
 def load_default_bundles() -> list[DatasetBundle]:
-    """Return the three datasets used by the Person 3 experiment suite."""
+    """Return the three local datasets used by Person 3 experiments."""
     return [
         load_breast_cancer_bundle(),
-        load_digits_binary_bundle(),
+        load_mnist_binary_bundle(),
         load_imbalanced_bundle(),
     ]
 

@@ -27,6 +27,7 @@ from src.experiments.rf_utils import (
     add_label_noise,
     ensure_output_dirs,
     evaluate_classifier,
+    load_breast_cancer_bundle,
     load_default_bundles,
     random_oversample_minority,
     save_results_table,
@@ -211,7 +212,11 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    bundles = load_default_bundles()[:1] if args.fast else load_default_bundles()
+    bundles = (
+        [load_breast_cancer_bundle()]
+        if args.fast
+        else load_default_bundles()
+    )
     rows = run_noise_robustness(
         noise_levels=[0.0, 0.10] if args.fast else None,
         n_estimators=10 if args.fast else 100,
