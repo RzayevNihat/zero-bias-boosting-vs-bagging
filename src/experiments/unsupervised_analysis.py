@@ -17,13 +17,12 @@ matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.datasets import load_digits
 from sklearn.metrics import adjusted_rand_score
 
 from src.unsupervised.dbscan import DBSCAN
 from src.unsupervised.kmeans import KMeans
 from src.unsupervised.pca import PCA
-from src.utils.preprocessing import PreprocessingPipeline
+from src.utils.preprocessing import PreprocessingPipeline, load_digits_dataset
 
 
 RANDOM_STATE = 42
@@ -48,13 +47,13 @@ def load_dataset(
     """
     Load a reproducible subset of the digits dataset.
     """
-    dataset = load_digits()
-
-    X = np.asarray(dataset.data, dtype=float)
-    y = np.asarray(dataset.target, dtype=int)
-
     if sample_limit <= 0:
         raise ValueError("sample_limit must be positive.")
+
+    dataset = load_digits_dataset(sample_limit=sample_limit)
+
+    X = dataset.X
+    y = dataset.y
 
     sample_limit = min(sample_limit, X.shape[0])
 

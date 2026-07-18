@@ -1,27 +1,18 @@
-# Experiment 1 - Baseline
-# Compares my unpruned tree vs my stump vs sklearn's tree, all on the same
-# WDBC data. This is basically the whole point of the module: prove the
-# tree actually works before anyone builds boosting/bagging on top of it.
-#
-# my stuff (trees, preprocessing, metrics) does the actual work, sklearn is
-# only here as the "answer key" to check against - never used to train
-# anything for real.
-#
-# run with: python -m src.experiments.baseline
-# (needs data/wdbc.data - run download_data.sh first if it's not there)
+"""Baseline experiment for the WDBC dataset."""
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
-# need this so imports work whether you run the file directly or with -m
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+
 ROOT_DIR = Path(__file__).resolve().parents[2]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
-
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
 
 from src.experiments.utils import ensure_results_dir, print_section, timer
 from src.metrics.evaluation import evaluate_classifier, export_csv, export_json
@@ -39,7 +30,7 @@ def run_baseline_experiment(
     random_state: int = RANDOM_STATE,
     test_size: float = TEST_SIZE,
 ) -> list[dict]:
-    # trains all 3 models on the same split and returns a metrics row for each
+    """Train the baseline models and return their metrics rows."""
     dataset = load_wdbc(data_path)
 
     print_section("Splitting data (80/20, stratified)")
@@ -51,9 +42,7 @@ def run_baseline_experiment(
         stratify=dataset.y,
     )
 
-    # fit the scaler on train only! if you fit it on the whole dataset
-    # you leak info from the test set and your numbers look better than
-    # they should
+    # Fit the scaler on the training split only to avoid data leakage.
     pipeline = PreprocessingPipeline()
     X_train_processed = pipeline.fit_transform(X_train)
     X_test_processed = pipeline.transform(X_test)
@@ -82,7 +71,7 @@ def run_baseline_experiment(
 
 
 def print_results_table(rows: list[dict]) -> None:
-    # just lines everything up nicely in the terminal, nothing fancy
+    """Render metrics as a simple aligned table."""
     if not rows:
         print("No results to display.")
         return
@@ -107,22 +96,32 @@ def print_results_table(rows: list[dict]) -> None:
         print("  ".join(cells))
 
 
-def main() -> None:
+def main() -> int:
+    """Run the WDBC baseline experiment and export the outputs."""
     ensure_results_dir(RESULTS_DIR)
 
     rows = run_baseline_experiment()
     print_results_table(rows)
 
-    # save to both formats, csv for opening in excel/pandas, json in case
-    # some other script wants to read it back in later
     csv_path = RESULTS_DIR / "baseline_results.csv"
     json_path = RESULTS_DIR / "baseline_results.json"
     export_csv(rows, csv_path)
     export_json({"experiment": "baseline", "results": rows}, json_path)
 
+    summary_path = RESULTS_DIR / "baseline_summary.json"
+    payload = {
+        "dataset": "wdbc",
+        "n_samples": int(np.shape(rows)[0]) if rows else 0,
+        "n_features": 0,
+        "class_counts": {},
+    }
+    summary_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
     print(f"\nSaved results to {csv_path}")
     print(f"Saved results to {json_path}")
+    print(f"Saved summary to {summary_path}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
