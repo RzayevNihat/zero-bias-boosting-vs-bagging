@@ -420,6 +420,12 @@ def load_covertype(
     if dataset_path.exists() and dataset_path.is_dir():
         dataset_path = dataset_path / "covtype.data"
 
+    # Accept the legacy project filename produced by older download scripts.
+    if not dataset_path.exists() and dataset_path.name == "covtype.data":
+        legacy_path = dataset_path.with_name("covertype.data")
+        if legacy_path.exists():
+            dataset_path = legacy_path
+
     if not dataset_path.exists():
         raise FileNotFoundError(
             f"Covertype dataset was not found at: {dataset_path}"
