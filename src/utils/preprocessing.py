@@ -117,17 +117,29 @@ def _coerce_feature_matrix(values: np.ndarray) -> np.ndarray:
         column = features[:, column_index]
         converted = np.empty(column.shape[0], dtype=float)
 
-        for row_index, item in enumerate(column):
-            value = str(item).strip()
+        normalized_column = np.array(
+            [str(item).strip() for item in column],
+            dtype=str,
+        )
+        unique_values = np.unique(normalized_column)
+        mapping = {
+            value: index
+            for index, value in enumerate(unique_values)
+        }
+
+        for row_index, value in enumerate(normalized_column):
             if value in {"", "?", "nan", "NaN"}:
                 converted[row_index] = np.nan
                 continue
             try:
                 converted[row_index] = float(value)
             except ValueError:
-                unique_values = np.unique(column)
-                mapping = {value: index for index, value in enumerate(unique_values)}
-                converted[row_index] = float(mapping[value])
+                if value in mapping:
+                    converted[row_index] = float(mapping[value])
+                    continue
+                raise ValueError(
+                    f"Feature matrix contains non-numeric values: {value}"
+                ) from None
 
         matrix[:, column_index] = converted
 
@@ -238,6 +250,7 @@ def load_wdbc(
         )
 
     X = _coerce_feature_matrix(raw_data[:, 2:])
+    X = handle_missing_values(X)
     y = np.where(
         diagnoses == "M",
         1,
@@ -277,6 +290,7 @@ def load_adult(
         raise ValueError("Adult dataset must contain at least one feature column and a label.")
 
     X = _coerce_feature_matrix(raw_data[:, :-1])
+    X = handle_missing_values(X)
     y = _coerce_labels(raw_data[:, -1])
     dataset = DatasetBundle(
         name="adult",
@@ -307,6 +321,7 @@ def load_covertype(
         raise ValueError("Covertype dataset must contain at least one feature column and a label.")
 
     X = _coerce_feature_matrix(raw_data[:, :-1])
+    X = handle_missing_values(X)
     y = _coerce_labels(raw_data[:, -1])
     dataset = DatasetBundle(
         name="covertype",

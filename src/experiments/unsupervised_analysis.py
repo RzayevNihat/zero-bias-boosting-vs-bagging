@@ -47,13 +47,13 @@ def load_dataset(
     """
     Load a reproducible subset of the digits dataset.
     """
+    if sample_limit <= 0:
+        raise ValueError("sample_limit must be positive.")
+
     dataset = load_digits_dataset(sample_limit=sample_limit)
 
     X = dataset.X
     y = dataset.y
-
-    if sample_limit <= 0:
-        raise ValueError("sample_limit must be positive.")
 
     sample_limit = min(sample_limit, X.shape[0])
 
