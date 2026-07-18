@@ -85,6 +85,7 @@ class CrossValidationConfig:
     covertype_max_samples: Optional[int] = 5000
     data_dir: Path = field(default_factory=lambda: Path("data"))
     output_dir: Path = field(default_factory=lambda: Path("results"))
+    figure_dir: Path = field(default_factory=lambda: Path("figures"))
 
 
 def setup_logger(name: str) -> logging.Logger:
@@ -622,11 +623,105 @@ def run_dataset(
     }
 
 
+def _short_model_label(model_name: str) -> str:
+    """Return compact model labels for comparison figures."""
+    replacements = {
+        "AdaBoost (ours)": "AdaBoost",
+        "AdaBoost SAMME.R (ours, bonus)": "SAMME.R",
+        "Single tree (ours)": "Tree ours",
+        "Random Forest (ours)": "RF ours",
+        "Single tree (sklearn reference only)": "Tree sklearn ref",
+        "Random Forest, depth-1 (sklearn reference only)": "RF depth-1 ref",
+        "Random Forest, full (sklearn reference only)": "RF full ref",
+    }
+    return replacements.get(model_name, model_name)
+
+
+def plot_head_to_head_macro_f1(
+    all_results: Dict[str, Dict[str, Any]],
+    path: Path,
+) -> Optional[Path]:
+    """Save a heatmap of cross-validation mean macro-F1 by model and dataset."""
+    try:
+        import matplotlib.pyplot as plt
+    except Exception as exc:
+        logger.warning(
+            "Skipping head-to-head plot export because matplotlib is unavailable: %s",
+            exc,
+        )
+        return None
+
+    dataset_names = list(all_results.keys())
+    model_names: list[str] = []
+    for dataset_result in all_results.values():
+        for model_name in dataset_result["summary"]:
+            if model_name not in model_names:
+                model_names.append(model_name)
+
+    if not dataset_names or not model_names:
+        logger.warning("Skipping head-to-head plot export because there are no results.")
+        return None
+
+    values = np.full((len(model_names), len(dataset_names)), np.nan, dtype=float)
+    for dataset_index, dataset_name in enumerate(dataset_names):
+        summary = all_results[dataset_name]["summary"]
+        for model_index, model_name in enumerate(model_names):
+            if model_name in summary:
+                values[model_index, dataset_index] = float(
+                    summary[model_name]["macro_f1"]["mean"]
+                )
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure_width = max(8.0, 2.0 + 1.35 * len(dataset_names))
+    figure_height = max(5.2, 1.8 + 0.45 * len(model_names))
+    figure, axis = plt.subplots(figsize=(figure_width, figure_height))
+    image = axis.imshow(
+        np.ma.masked_invalid(values),
+        vmin=0.0,
+        vmax=1.0,
+        cmap="viridis",
+        aspect="auto",
+    )
+
+    axis.set_title("Head-to-head comparison: mean CV macro-F1")
+    axis.set_xticks(np.arange(len(dataset_names)))
+    axis.set_xticklabels(dataset_names, rotation=15, ha="right")
+    axis.set_yticks(np.arange(len(model_names)))
+    axis.set_yticklabels([_short_model_label(name) for name in model_names])
+
+    for model_index in range(len(model_names)):
+        for dataset_index in range(len(dataset_names)):
+            value = values[model_index, dataset_index]
+            if not np.isfinite(value):
+                continue
+            text_color = "white" if value < 0.62 else "black"
+            axis.text(
+                dataset_index,
+                model_index,
+                f"{value:.3f}",
+                ha="center",
+                va="center",
+                color=text_color,
+                fontsize=8,
+            )
+
+    colorbar = figure.colorbar(image, ax=axis)
+    colorbar.set_label("Mean macro-F1")
+    figure.tight_layout()
+    figure.savefig(path, dpi=200)
+    plt.close(figure)
+    return path
+
+
 def export_results(
     all_results: Dict[str, Dict[str, Any]],
     config: CrossValidationConfig,
 ) -> None:
-    """Persist the study to results/ as JSON and fold-level CSV."""
+    """Persist the study to results/ as JSON, CSV, and figure artifacts."""
+    figure_path = plot_head_to_head_macro_f1(
+        all_results,
+        config.figure_dir / "head_to_head_macro_f1.png",
+    )
     export_json(
         {
             "config": vars(config),
@@ -651,6 +746,9 @@ def export_results(
             "significance_tests": {
                 name: result["significance_tests"]
                 for name, result in all_results.items()
+            },
+            "figure_paths": {
+                "macro_f1_heatmap": figure_path,
             },
         },
         config.output_dir / "head_to_head.json",

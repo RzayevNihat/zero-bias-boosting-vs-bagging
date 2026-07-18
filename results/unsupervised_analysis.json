@@ -1,0 +1,63 @@
+{
+  "dataset": "sklearn_digits",
+  "n_samples": 600,
+  "n_original_features": 64,
+  "pca_components": 2,
+  "pca_explained_variance_ratio": [
+    0.1266498778511644,
+    0.09995226073692885
+  ],
+  "pca_cumulative_explained_variance": [
+    0.1266498778511644,
+    0.22660213858809325
+  ],
+  "kmeans": {
+    "n_clusters": 10,
+    "inertia": 883.31598848036,
+    "iterations": 15,
+    "adjusted_rand_index": 0.29204093973182277
+  },
+  "dbscan": {
+    "eps": 0.8083451534881032,
+    "min_samples": 5,
+    "n_clusters": 1,
+    "noise_samples": 31,
+    "adjusted_rand_index": 0.003293450814446878
+  },
+  "elbow_curve": {
+    "cluster_values": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "inertias": [
+      8021.715706018496,
+      5025.052700996348,
+      3039.861099221831,
+      2428.787354698409,
+      1950.7481240769664,
+      1550.0665052120444,
+      1291.1372051644692,
+      1166.4866258757133,
+      1012.3240167060396,
+      890.1570723896803,
+      773.0497528658293,
+      721.241054623873
+    ]
+  },
+  "figures": {
+    "pca_projection": "figures\\unsupervised_pca_projection.png",
+    "pca_scree": "figures\\unsupervised_pca_scree.png",
+    "kmeans_elbow": "figures\\unsupervised_kmeans_elbow.png",
+    "dbscan_k_distance": "figures\\unsupervised_dbscan_k_distance.png"
+  }
+}

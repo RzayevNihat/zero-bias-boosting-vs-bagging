@@ -1,0 +1,1477 @@
+{
+  "config": {
+    "datasets": [
+      "wdbc",
+      "adult",
+      "covertype"
+    ],
+    "n_splits": 5,
+    "n_estimators": 100,
+    "learning_rate": 1.0,
+    "sammer_smoothing": 0.001,
+    "random_state": 42,
+    "n_jobs": 1,
+    "confidence_level": 0.95,
+    "alpha": 0.05,
+    "adult_max_samples": 5000,
+    "covertype_max_samples": 5000,
+    "data_dir": "data",
+    "output_dir": "results",
+    "figure_dir": "figures"
+  },
+  "datasets": {
+    "wdbc": {
+      "name": "wdbc",
+      "task": "binary_classification",
+      "source": "data\\wdbc.data",
+      "notes": "Wisconsin Diagnostic Breast Cancer dataset loaded from the local data directory; labels are M=1 and B=0.",
+      "n_samples": 569,
+      "n_features": 30
+    },
+    "adult": {
+      "name": "adult",
+      "task": "binary_classification",
+      "source": "data\\adult.data; data\\adult.test",
+      "notes": "Adult Income local train/test files combined, rows with '?' removed, categorical features one-hot encoded. Dropped 3620 rows with missing values. Limited to at most 5000 samples.",
+      "n_samples": 5000,
+      "n_features": 104
+    },
+    "covertype": {
+      "name": "covertype",
+      "task": "multiclass_classification",
+      "source": "data\\covtype.data",
+      "notes": "Covertype dataset loaded from the local data directory; original cover-type labels are kept. Random reservoir subset limited to at most 5000 samples.",
+      "n_samples": 5000,
+      "n_features": 54
+    }
+  },
+  "summary": {
+    "wdbc": {
+      "AdaBoost (ours)": {
+        "accuracy": {
+          "mean": 0.9666200900481291,
+          "std": 0.019982913402529022,
+          "ci_low": 0.9418080258969853,
+          "ci_high": 0.9914321541992729
+        },
+        "macro_precision": {
+          "mean": 0.9682361977361976,
+          "std": 0.019623297283488137,
+          "ci_low": 0.9438706559732407,
+          "ci_high": 0.9926017394991545
+        },
+        "macro_recall": {
+          "mean": 0.9610073879972341,
+          "std": 0.024678503534532173,
+          "ci_low": 0.9303649786288611,
+          "ci_high": 0.991649797365607
+        },
+        "macro_f1": {
+          "mean": 0.9639401028579357,
+          "std": 0.02170800437488481,
+          "ci_low": 0.9369860553527914,
+          "ci_high": 0.99089415036308
+        },
+        "roc_auc": {
+          "mean": 0.9933964250619999,
+          "std": 0.00694225794111344,
+          "ci_low": 0.9847764733102752,
+          "ci_high": 1.0
+        },
+        "log_loss": {
+          "mean": 0.23713044128015345,
+          "std": 0.16780227075622187,
+          "ci_low": 0.02877640286531244,
+          "ci_high": 0.4454844796949945
+        },
+        "brier_score": {
+          "mean": 0.06414774528019243,
+          "std": 0.03363610440214092,
+          "ci_low": 0.02238300540423091,
+          "ci_high": 0.10591248515615395
+        },
+        "expected_calibration_error": {
+          "mean": 0.035821747982839616,
+          "std": 0.016318223026646036,
+          "ci_low": 0.01555999793599357,
+          "ci_high": 0.056083498029685666
+        }
+      },
+      "AdaBoost SAMME.R (ours, bonus)": {
+        "accuracy": {
+          "mean": 0.9701443875174661,
+          "std": 0.021995818720433786,
+          "ci_low": 0.9428329713012871,
+          "ci_high": 0.9974558037336452
+        },
+        "macro_precision": {
+          "mean": 0.9716717378840667,
+          "std": 0.020944719556119668,
+          "ci_low": 0.9456654336587585,
+          "ci_high": 0.9976780421093748
+        },
+        "macro_recall": {
+          "mean": 0.9647772292670753,
+          "std": 0.026857363455069443,
+          "ci_low": 0.9314294079782421,
+          "ci_high": 0.9981250505559085
+        },
+        "macro_f1": {
+          "mean": 0.9677267621367109,
+          "std": 0.023891682972310344,
+          "ci_low": 0.9380613195334953,
+          "ci_high": 0.9973922047399266
+        },
+        "roc_auc": {
+          "mean": 0.9953724283686615,
+          "std": 0.0037431657718767107,
+          "ci_low": 0.9907246741904135,
+          "ci_high": 1.0
+        },
+        "log_loss": {
+          "mean": 0.2786434930261546,
+          "std": 0.22721564696391655,
+          "ci_low": 0.0,
+          "ci_high": 0.5607689816898263
+        },
+        "brier_score": {
+          "mean": 0.05459692971196056,
+          "std": 0.0377137624009792,
+          "ci_low": 0.00776910870185394,
+          "ci_high": 0.10142475072206719
+        },
+        "expected_calibration_error": {
+          "mean": 0.029677332441011,
+          "std": 0.019829102475923188,
+          "ci_low": 0.005056249779964054,
+          "ci_high": 0.05429841510205795
+        }
+      },
+      "Single tree (ours)": {
+        "accuracy": {
+          "mean": 0.9104021114733737,
+          "std": 0.020800993036216037,
+          "ci_low": 0.884574267293417,
+          "ci_high": 0.9362299556533303
+        },
+        "macro_precision": {
+          "mean": 0.9046867207209786,
+          "std": 0.021217551158169694,
+          "ci_low": 0.8783416513178327,
+          "ci_high": 0.9310317901241244
+        },
+        "macro_recall": {
+          "mean": 0.9047556657776115,
+          "std": 0.025682074650874815,
+          "ci_low": 0.8728671582844387,
+          "ci_high": 0.9366441732707842
+        },
+        "macro_f1": {
+          "mean": 0.9041452530457775,
+          "std": 0.022696469383230868,
+          "ci_low": 0.8759638641262858,
+          "ci_high": 0.9323266419652693
+        },
+        "roc_auc": {
+          "mean": 0.9047556657776115,
+          "std": 0.0256820746508748,
+          "ci_low": 0.8728671582844387,
+          "ci_high": 0.9366441732707842
+        },
+        "log_loss": {
+          "mean": 2.4756811498227345,
+          "std": 0.5747526778159466,
+          "ci_low": 1.7620314419074663,
+          "ci_high": 3.1893308577380024
+        },
+        "brier_score": {
+          "mean": 0.1791957770528942,
+          "std": 0.04160198607234886,
+          "ci_low": 0.1275400886930842,
+          "ci_high": 0.23085146541270418
+        },
+        "expected_calibration_error": {
+          "mean": 0.0895978885256263,
+          "std": 0.02080099303621606,
+          "ci_low": 0.06377004434566962,
+          "ci_high": 0.115425732705583
+        }
+      },
+      "Random Forest (ours)": {
+        "accuracy": {
+          "mean": 0.9560627231796305,
+          "std": 0.01641169598980398,
+          "ci_low": 0.9356849111196258,
+          "ci_high": 0.9764405352396351
+        },
+        "macro_precision": {
+          "mean": 0.9587766376479376,
+          "std": 0.017102975427493103,
+          "ci_low": 0.9375404887974558,
+          "ci_high": 0.9800127864984195
+        },
+        "macro_recall": {
+          "mean": 0.9497336733579772,
+          "std": 0.021690084606170276,
+          "ci_low": 0.9228018761845019,
+          "ci_high": 0.9766654705314525
+        },
+        "macro_f1": {
+          "mean": 0.9525416610859768,
+          "std": 0.01782358575402774,
+          "ci_low": 0.9304107563363031,
+          "ci_high": 0.9746725658356505
+        },
+        "roc_auc": {
+          "mean": 0.9881477278832339,
+          "std": 0.008512858442463848,
+          "ci_low": 0.9775776180334216,
+          "ci_high": 0.9987178377330462
+        },
+        "log_loss": {
+          "mean": 0.20130325117364825,
+          "std": 0.11769499879005987,
+          "ci_low": 0.05516560840739532,
+          "ci_high": 0.3474408939399012
+        },
+        "brier_score": {
+          "mean": 0.06393220307404272,
+          "std": 0.01249089699729031,
+          "ci_low": 0.04842270596723584,
+          "ci_high": 0.0794417001808496
+        },
+        "expected_calibration_error": {
+          "mean": 0.0412901723337333,
+          "std": 0.009566879272521226,
+          "ci_low": 0.029411322765881875,
+          "ci_high": 0.05316902190158472
+        }
+      },
+      "Single tree (sklearn reference only)": {
+        "accuracy": {
+          "mean": 0.9209284272628473,
+          "std": 0.020507571659207056,
+          "ci_low": 0.8954649138430261,
+          "ci_high": 0.9463919406826685
+        },
+        "macro_precision": {
+          "mean": 0.9191036758876947,
+          "std": 0.017573661497863737,
+          "ci_low": 0.8972830930891776,
+          "ci_high": 0.9409242586862118
+        },
+        "macro_recall": {
+          "mean": 0.9141006244183447,
+          "std": 0.029290151304625638,
+          "ci_low": 0.87773209804145,
+          "ci_high": 0.9504691507952394
+        },
+        "macro_f1": {
+          "mean": 0.9148392906346272,
+          "std": 0.02342645865018859,
+          "ci_low": 0.8857515003232789,
+          "ci_high": 0.9439270809459755
+        },
+        "roc_auc": {
+          "mean": 0.9141006244183447,
+          "std": 0.029290151304625638,
+          "ci_low": 0.87773209804145,
+          "ci_high": 0.9504691507952394
+        },
+        "log_loss": {
+          "mean": 2.1848282959708656,
+          "std": 0.566645145551947,
+          "ci_low": 1.4812454189820814,
+          "ci_high": 2.8884111729596498
+        },
+        "brier_score": {
+          "mean": 0.15814314547398894,
+          "std": 0.041015143318332045,
+          "ci_low": 0.10721611863444838,
+          "ci_high": 0.2090701723135295
+        },
+        "expected_calibration_error": {
+          "mean": 0.07907157273615262,
+          "std": 0.020507571659207066,
+          "ci_low": 0.05360805931633137,
+          "ci_high": 0.10453508615597387
+        }
+      },
+      "Random Forest, depth-1 (sklearn reference only)": {
+        "accuracy": {
+          "mean": 0.9191895668374477,
+          "std": 0.02860325220209368,
+          "ci_low": 0.8836739383465654,
+          "ci_high": 0.95470519532833
+        },
+        "macro_precision": {
+          "mean": 0.928087376501398,
+          "std": 0.02098247999236413,
+          "ci_low": 0.9020341865018487,
+          "ci_high": 0.9541405665009474
+        },
+        "macro_recall": {
+          "mean": 0.9030941462729867,
+          "std": 0.042940938472073815,
+          "ci_low": 0.8497759289231297,
+          "ci_high": 0.9564123636228437
+        },
+        "macro_f1": {
+          "mean": 0.9105731983489053,
+          "std": 0.03406156163688219,
+          "ci_low": 0.8682801835417902,
+          "ci_high": 0.9528662131560204
+        },
+        "roc_auc": {
+          "mean": 0.9829617021682203,
+          "std": 0.007385594196234522,
+          "ci_low": 0.9737912757494133,
+          "ci_high": 0.9921321285870274
+        },
+        "log_loss": {
+          "mean": 0.2342014605310431,
+          "std": 0.018866064544648068,
+          "ci_low": 0.2107761473981651,
+          "ci_high": 0.2576267736639211
+        },
+        "brier_score": {
+          "mean": 0.11990551797677929,
+          "std": 0.018116255424113065,
+          "ci_low": 0.09741121583439442,
+          "ci_high": 0.14239982011916413
+        },
+        "expected_calibration_error": {
+          "mean": 0.10434627853164964,
+          "std": 0.007180666456360431,
+          "ci_low": 0.09543030350967749,
+          "ci_high": 0.1132622535536218
+        }
+      },
+      "Random Forest, full (sklearn reference only)": {
+        "accuracy": {
+          "mean": 0.956078248719143,
+          "std": 0.015149179928310996,
+          "ci_low": 0.9372680573998482,
+          "ci_high": 0.9748884400384379
+        },
+        "macro_precision": {
+          "mean": 0.9578795349903622,
+          "std": 0.013322025473042707,
+          "ci_low": 0.9413380555773315,
+          "ci_high": 0.9744210144033928
+        },
+        "macro_recall": {
+          "mean": 0.949749920712908,
+          "std": 0.02201774689852982,
+          "ci_low": 0.9224112770674409,
+          "ci_high": 0.9770885643583751
+        },
+        "macro_f1": {
+          "mean": 0.952540242203467,
+          "std": 0.016945979543207222,
+          "ci_low": 0.9314990294903691,
+          "ci_high": 0.9735814549165649
+        },
+        "roc_auc": {
+          "mean": 0.9901663750808035,
+          "std": 0.00819420650008306,
+          "ci_low": 0.9799919238758031,
+          "ci_high": 1.0
+        },
+        "log_loss": {
+          "mean": 0.16151256957834925,
+          "std": 0.10941409431336313,
+          "ci_low": 0.025657027773375057,
+          "ci_high": 0.2973681113833234
+        },
+        "brier_score": {
+          "mean": 0.0669114454277216,
+          "std": 0.014416669136778987,
+          "ci_low": 0.04901078638656779,
+          "ci_high": 0.0848121044688754
+        },
+        "expected_calibration_error": {
+          "mean": 0.03155022512075166,
+          "std": 0.011355231353312392,
+          "ci_low": 0.017450843158069055,
+          "ci_high": 0.04564960708343427
+        }
+      }
+    },
+    "adult": {
+      "AdaBoost (ours)": {
+        "accuracy": {
+          "mean": 0.8474,
+          "std": 0.011545561917897294,
+          "ci_low": 0.8330642914275146,
+          "ci_high": 0.8617357085724855
+        },
+        "macro_precision": {
+          "mean": 0.8116801445518472,
+          "std": 0.01576312884480067,
+          "ci_low": 0.792107634966211,
+          "ci_high": 0.8312526541374835
+        },
+        "macro_recall": {
+          "mean": 0.760610738590135,
+          "std": 0.02021350127657774,
+          "ci_low": 0.7355123617773626,
+          "ci_high": 0.7857091154029073
+        },
+        "macro_f1": {
+          "mean": 0.780103770033682,
+          "std": 0.019011436485949416,
+          "ci_low": 0.7564979537949411,
+          "ci_high": 0.803709586272423
+        },
+        "roc_auc": {
+          "mean": 0.8990828485107143,
+          "std": 0.009841506787839498,
+          "ci_low": 0.886863003844176,
+          "ci_high": 0.9113026931772525
+        },
+        "log_loss": {
+          "mean": 0.33233128490710173,
+          "std": 0.016095089195986397,
+          "ci_low": 0.31234659210456706,
+          "ci_high": 0.3523159777096364
+        },
+        "brier_score": {
+          "mean": 0.21198498944991,
+          "std": 0.010727880984556484,
+          "ci_low": 0.19866456585437148,
+          "ci_high": 0.22530541304544854
+        },
+        "expected_calibration_error": {
+          "mean": 0.019954488429575628,
+          "std": 0.004345607992699891,
+          "ci_low": 0.014558703434733648,
+          "ci_high": 0.025350273424417608
+        }
+      },
+      "AdaBoost SAMME.R (ours, bonus)": {
+        "accuracy": {
+          "mean": 0.8513999999999999,
+          "std": 0.008848728722251583,
+          "ci_low": 0.8404128521157086,
+          "ci_high": 0.8623871478842913
+        },
+        "macro_precision": {
+          "mean": 0.8113930747558337,
+          "std": 0.013041032599689396,
+          "ci_low": 0.7952004940773977,
+          "ci_high": 0.8275856554342697
+        },
+        "macro_recall": {
+          "mean": 0.7777761666960232,
+          "std": 0.015111567681991995,
+          "ci_low": 0.7590126771488742,
+          "ci_high": 0.7965396562431722
+        },
+        "macro_f1": {
+          "mean": 0.7918243090113302,
+          "std": 0.013699003797887287,
+          "ci_low": 0.7748147491842369,
+          "ci_high": 0.8088338688384235
+        },
+        "roc_auc": {
+          "mean": 0.9059874935468629,
+          "std": 0.007539695604137854,
+          "ci_low": 0.8966257249577898,
+          "ci_high": 0.915349262135936
+        },
+        "log_loss": {
+          "mean": 0.3257172381765558,
+          "std": 0.018002832056457075,
+          "ci_low": 0.3033637697463444,
+          "ci_high": 0.3480707066067672
+        },
+        "brier_score": {
+          "mean": 0.20356276775805338,
+          "std": 0.008852602958863288,
+          "ci_low": 0.1925708093736407,
+          "ci_high": 0.21455472614246604
+        },
+        "expected_calibration_error": {
+          "mean": 0.022386635960987368,
+          "std": 0.005258340738484779,
+          "ci_low": 0.015857543575722624,
+          "ci_high": 0.028915728346252112
+        }
+      },
+      "Single tree (ours)": {
+        "accuracy": {
+          "mean": 0.8018000000000001,
+          "std": 0.010848963084092425,
+          "ci_low": 0.7883292331206408,
+          "ci_high": 0.8152707668793593
+        },
+        "macro_precision": {
+          "mean": 0.7369410593982277,
+          "std": 0.014676328511204366,
+          "ci_low": 0.7187179906600538,
+          "ci_high": 0.7551641281364017
+        },
+        "macro_recall": {
+          "mean": 0.7391046485288539,
+          "std": 0.018787878638474947,
+          "ci_low": 0.7157764160208381,
+          "ci_high": 0.7624328810368698
+        },
+        "macro_f1": {
+          "mean": 0.7378733621926437,
+          "std": 0.016581490231889092,
+          "ci_low": 0.7172847227351395,
+          "ci_high": 0.7584620016501478
+        },
+        "roc_auc": {
+          "mean": 0.7391046485288537,
+          "std": 0.018787878638474947,
+          "ci_low": 0.7157764160208379,
+          "ci_high": 0.7624328810368696
+        },
+        "log_loss": {
+          "mean": 5.47646838517784,
+          "std": 0.29976792806247593,
+          "ci_low": 5.104257341086528,
+          "ci_high": 5.848679429269152
+        },
+        "brier_score": {
+          "mean": 0.3963999999992072,
+          "std": 0.021697926168141445,
+          "ci_low": 0.3694584662405426,
+          "ci_high": 0.4233415337578718
+        },
+        "expected_calibration_error": {
+          "mean": 0.19819999999899998,
+          "std": 0.010848963084092424,
+          "ci_low": 0.18472923311964073,
+          "ci_high": 0.21167076687835923
+        }
+      },
+      "Random Forest (ours)": {
+        "accuracy": {
+          "mean": 0.844,
+          "std": 0.011979148550710951,
+          "ci_low": 0.8291259225154474,
+          "ci_high": 0.8588740774845526
+        },
+        "macro_precision": {
+          "mean": 0.8040577742309573,
+          "std": 0.015108257698070216,
+          "ci_low": 0.7852983945716786,
+          "ci_high": 0.8228171538902359
+        },
+        "macro_recall": {
+          "mean": 0.759670416778269,
+          "std": 0.02198531341107032,
+          "ci_low": 0.7323720446265165,
+          "ci_high": 0.7869687889300214
+        },
+        "macro_f1": {
+          "mean": 0.7770727713880308,
+          "std": 0.020034738417677795,
+          "ci_low": 0.7521963579813704,
+          "ci_high": 0.8019491847946911
+        },
+        "roc_auc": {
+          "mean": 0.9001557836845739,
+          "std": 0.01061624785162505,
+          "ci_low": 0.886973970931203,
+          "ci_high": 0.9133375964379449
+        },
+        "log_loss": {
+          "mean": 0.338587836494844,
+          "std": 0.016838378425308644,
+          "ci_low": 0.3176802282160072,
+          "ci_high": 0.35949544477368073
+        },
+        "brier_score": {
+          "mean": 0.2143896993423211,
+          "std": 0.009283465538092691,
+          "ci_low": 0.20286275440510607,
+          "ci_high": 0.22591664427953614
+        },
+        "expected_calibration_error": {
+          "mean": 0.0229402663249822,
+          "std": 0.010365271237763854,
+          "ci_low": 0.010070082197433855,
+          "ci_high": 0.03581045045253055
+        }
+      },
+      "Single tree (sklearn reference only)": {
+        "accuracy": {
+          "mean": 0.7988000000000001,
+          "std": 0.015254507530562907,
+          "ci_low": 0.7798590271889719,
+          "ci_high": 0.8177409728110282
+        },
+        "macro_precision": {
+          "mean": 0.73330198920819,
+          "std": 0.019846876573641734,
+          "ci_low": 0.7086588370899054,
+          "ci_high": 0.7579451413264746
+        },
+        "macro_recall": {
+          "mean": 0.7328715118890865,
+          "std": 0.018087175181070708,
+          "ci_low": 0.7104133176375463,
+          "ci_high": 0.7553297061406267
+        },
+        "macro_f1": {
+          "mean": 0.7328772673470211,
+          "std": 0.018487703792820716,
+          "ci_low": 0.7099217511380204,
+          "ci_high": 0.7558327835560218
+        },
+        "roc_auc": {
+          "mean": 0.7328715118890865,
+          "std": 0.018087175181070708,
+          "ci_low": 0.7104133176375463,
+          "ci_high": 0.7553297061406267
+        },
+        "log_loss": {
+          "mean": 5.559361448525623,
+          "std": 0.42149761969005967,
+          "ci_low": 5.036003028827894,
+          "ci_high": 6.082719868223352
+        },
+        "brier_score": {
+          "mean": 0.40239999999919523,
+          "std": 0.03050901506106478,
+          "ci_low": 0.3645180543772147,
+          "ci_high": 0.4402819456211758
+        },
+        "expected_calibration_error": {
+          "mean": 0.20119999999899996,
+          "std": 0.015254507530562907,
+          "ci_low": 0.1822590271879718,
+          "ci_high": 0.22014097281002812
+        }
+      },
+      "Random Forest, depth-1 (sklearn reference only)": {
+        "accuracy": {
+          "mean": 0.7484,
+          "std": 0.0005477225575051667,
+          "ci_low": 0.7477199126193417,
+          "ci_high": 0.7490800873806582
+        },
+        "macro_precision": {
+          "mean": 0.3742,
+          "std": 0.0002738612787525833,
+          "ci_low": 0.37385995630967084,
+          "ci_high": 0.3745400436903291
+        },
+        "macro_recall": {
+          "mean": 0.5,
+          "std": 0.0,
+          "ci_low": 0.5,
+          "ci_high": 0.5
+        },
+        "macro_f1": {
+          "mean": 0.42804845658781154,
+          "std": 0.00017915518822298585,
+          "ci_low": 0.42782600604050364,
+          "ci_high": 0.42827090713511945
+        },
+        "roc_auc": {
+          "mean": 0.8685166203681751,
+          "std": 0.013382211549029134,
+          "ci_low": 0.851900410071399,
+          "ci_high": 0.8851328306649512
+        },
+        "log_loss": {
+          "mean": 0.4966689360202124,
+          "std": 0.007387517975649138,
+          "ci_low": 0.4874961209137657,
+          "ci_high": 0.5058417511266591
+        },
+        "brier_score": {
+          "mean": 0.325127574319723,
+          "std": 0.005519922997929539,
+          "ci_low": 0.3182736846603369,
+          "ci_high": 0.3319814639791091
+        },
+        "expected_calibration_error": {
+          "mean": 0.13538967006284833,
+          "std": 0.014767789211658007,
+          "ci_low": 0.11705303786567063,
+          "ci_high": 0.153726302260026
+        }
+      },
+      "Random Forest, full (sklearn reference only)": {
+        "accuracy": {
+          "mean": 0.837,
+          "std": 0.010222524150130445,
+          "ci_low": 0.8243070597920145,
+          "ci_high": 0.8496929402079855
+        },
+        "macro_precision": {
+          "mean": 0.7887052279363042,
+          "std": 0.014080231473086903,
+          "ci_low": 0.7712223114297966,
+          "ci_high": 0.8061881444428117
+        },
+        "macro_recall": {
+          "mean": 0.7618370552261158,
+          "std": 0.01674056844106609,
+          "ci_low": 0.7410508940833779,
+          "ci_high": 0.7826232163688537
+        },
+        "macro_f1": {
+          "mean": 0.7732869122804553,
+          "std": 0.015438414044696246,
+          "ci_low": 0.7541175893717926,
+          "ci_high": 0.792456235189118
+        },
+        "roc_auc": {
+          "mean": 0.8868874054223503,
+          "std": 0.01084630136736519,
+          "ci_low": 0.8734199435008247,
+          "ci_high": 0.9003548673438759
+        },
+        "log_loss": {
+          "mean": 0.3921658459660383,
+          "std": 0.021646881881579816,
+          "ci_low": 0.3652876920603113,
+          "ci_high": 0.4190439998717653
+        },
+        "brier_score": {
+          "mean": 0.2267134799999936,
+          "std": 0.011439531178856993,
+          "ci_low": 0.21250942597887743,
+          "ci_high": 0.2409175340211098
+        },
+        "expected_calibration_error": {
+          "mean": 0.021517999999890382,
+          "std": 0.005503918604068371,
+          "ci_low": 0.014683982420174768,
+          "ci_high": 0.028352017579605995
+        }
+      }
+    },
+    "covertype": {
+      "AdaBoost (ours)": {
+        "accuracy": {
+          "mean": 0.6172,
+          "std": 0.02301521236052366,
+          "ci_low": 0.5886228394009235,
+          "ci_high": 0.6457771605990764
+        },
+        "macro_precision": {
+          "mean": 0.3274076728305749,
+          "std": 0.011243064671769519,
+          "ci_low": 0.3134475641981621,
+          "ci_high": 0.34136778146298774
+        },
+        "macro_recall": {
+          "mean": 0.3199831577848373,
+          "std": 0.02330473813152612,
+          "ci_low": 0.2910465034593549,
+          "ci_high": 0.34891981211031975
+        },
+        "macro_f1": {
+          "mean": 0.31887745283822244,
+          "std": 0.020027920114329585,
+          "ci_low": 0.29400950547335836,
+          "ci_high": 0.3437454002030865
+        },
+        "roc_auc": {
+          "mean": 0.883330593038977,
+          "std": 0.009726304613044535,
+          "ci_low": 0.8712537907653964,
+          "ci_high": 0.8954073953125575
+        },
+        "log_loss": {
+          "mean": 0.9781995017526166,
+          "std": 0.05695189588176416,
+          "ci_low": 0.9074843830067808,
+          "ci_high": 1.0489146204984523
+        },
+        "brier_score": {
+          "mean": 0.5563585954135808,
+          "std": 0.03538925589431926,
+          "ci_low": 0.5124170304463842,
+          "ci_high": 0.6003001603807774
+        },
+        "expected_calibration_error": {
+          "mean": 0.1770432155158262,
+          "std": 0.023782755630690953,
+          "ci_low": 0.14751302407111938,
+          "ci_high": 0.206573406960533
+        }
+      },
+      "AdaBoost SAMME.R (ours, bonus)": {
+        "accuracy": {
+          "mean": 0.5048,
+          "std": 0.03670422319025429,
+          "ci_low": 0.45922568748262554,
+          "ci_high": 0.5503743125173745
+        },
+        "macro_precision": {
+          "mean": 0.34536183019076966,
+          "std": 0.06054859172684888,
+          "ci_low": 0.2701808237016031,
+          "ci_high": 0.4205428366799362
+        },
+        "macro_recall": {
+          "mean": 0.34176074389546024,
+          "std": 0.029134828984000997,
+          "ci_low": 0.30558507565220266,
+          "ci_high": 0.3779364121387178
+        },
+        "macro_f1": {
+          "mean": 0.3171084646281663,
+          "std": 0.03464785577163983,
+          "ci_low": 0.2740874695015646,
+          "ci_high": 0.36012945975476796
+        },
+        "roc_auc": {
+          "mean": 0.8322714373938348,
+          "std": 0.012243975069285418,
+          "ci_low": 0.8170685343553986,
+          "ci_high": 0.847474340432271
+        },
+        "log_loss": {
+          "mean": 4.67686879529001,
+          "std": 0.6004436903981758,
+          "ci_low": 3.9313194819739876,
+          "ci_high": 5.422418108606031
+        },
+        "brier_score": {
+          "mean": 0.9075922587510409,
+          "std": 0.07841556633730498,
+          "ci_low": 0.8102264731312503,
+          "ci_high": 1.0049580443708315
+        },
+        "expected_calibration_error": {
+          "mean": 0.43552628399682564,
+          "std": 0.04341129165684977,
+          "ci_low": 0.38162404603099187,
+          "ci_high": 0.4894285219626594
+        }
+      },
+      "Single tree (ours)": {
+        "accuracy": {
+          "mean": 0.6816000000000001,
+          "std": 0.012739701723352826,
+          "ci_low": 0.6657815710222584,
+          "ci_high": 0.6974184289777418
+        },
+        "macro_precision": {
+          "mean": 0.5236676252358976,
+          "std": 0.023917956699294918,
+          "ci_low": 0.49396955949178656,
+          "ci_high": 0.5533656909800087
+        },
+        "macro_recall": {
+          "mean": 0.5224941842625082,
+          "std": 0.025400832077877286,
+          "ci_low": 0.49095488554698863,
+          "ci_high": 0.5540334829780277
+        },
+        "macro_f1": {
+          "mean": 0.5188910277829755,
+          "std": 0.023817762512359734,
+          "ci_low": 0.48931736955361116,
+          "ci_high": 0.5484646860123398
+        },
+        "roc_auc": {
+          "mean": 0.7243071688212877,
+          "std": 0.011727569528587146,
+          "ci_low": 0.7097454679512095,
+          "ci_high": 0.7388688696913658
+        },
+        "log_loss": {
+          "mean": 8.797717123315739,
+          "std": 0.35201096732851866,
+          "ci_low": 8.360637778211036,
+          "ci_high": 9.234796468420441
+        },
+        "brier_score": {
+          "mean": 0.636799999995542,
+          "std": 0.02547940344652734,
+          "ci_low": 0.6051631420402801,
+          "ci_high": 0.668436857950804
+        },
+        "expected_calibration_error": {
+          "mean": 0.3183999999939993,
+          "std": 0.012739701723352826,
+          "ci_low": 0.30258157101625766,
+          "ci_high": 0.334218428971741
+        }
+      },
+      "Random Forest (ours)": {
+        "accuracy": {
+          "mean": 0.7532,
+          "std": 0.005674504383644448,
+          "ci_low": 0.7461541721991792,
+          "ci_high": 0.7602458278008207
+        },
+        "macro_precision": {
+          "mean": 0.7164232324004493,
+          "std": 0.11445589872440354,
+          "ci_low": 0.5743074635723012,
+          "ci_high": 0.8585390012285973
+        },
+        "macro_recall": {
+          "mean": 0.4633511664564347,
+          "std": 0.024047440627148753,
+          "ci_low": 0.43349232518076153,
+          "ci_high": 0.4932100077321079
+        },
+        "macro_f1": {
+          "mean": 0.49448591165009015,
+          "std": 0.036721622132460205,
+          "ci_low": 0.4488899954925718,
+          "ci_high": 0.5400818278076085
+        },
+        "roc_auc": {
+          "mean": 0.9520470007586056,
+          "std": 0.004506671366393901,
+          "ci_low": 0.9464512291712185,
+          "ci_high": 0.9576427723459927
+        },
+        "log_loss": {
+          "mean": 0.5950590105940136,
+          "std": 0.0050114734181170495,
+          "ci_low": 0.5888364444727825,
+          "ci_high": 0.6012815767152446
+        },
+        "brier_score": {
+          "mean": 0.3465265832443202,
+          "std": 0.0020905816398462365,
+          "ci_low": 0.3439307832868173,
+          "ci_high": 0.34912238320182304
+        },
+        "expected_calibration_error": {
+          "mean": 0.07847233298716291,
+          "std": 0.004495116985611622,
+          "ci_low": 0.07289090805841474,
+          "ci_high": 0.08405375791591109
+        }
+      },
+      "Single tree (sklearn reference only)": {
+        "accuracy": {
+          "mean": 0.6811999999999999,
+          "std": 0.017064583206161194,
+          "ci_low": 0.660011521388557,
+          "ci_high": 0.7023884786114428
+        },
+        "macro_precision": {
+          "mean": 0.5379600041094404,
+          "std": 0.02616342599793593,
+          "ci_low": 0.505473819978135,
+          "ci_high": 0.5704461882407459
+        },
+        "macro_recall": {
+          "mean": 0.5328157489676002,
+          "std": 0.024235573145883777,
+          "ci_low": 0.5027233103165224,
+          "ci_high": 0.562908187618678
+        },
+        "macro_f1": {
+          "mean": 0.5322646077582871,
+          "std": 0.02043419462712634,
+          "ci_low": 0.5068922039574956,
+          "ci_high": 0.5576370115590786
+        },
+        "roc_auc": {
+          "mean": 0.7293719245706203,
+          "std": 0.011589080340686633,
+          "ci_low": 0.7149821807392986,
+          "ci_high": 0.7437616684019419
+        },
+        "log_loss": {
+          "mean": 8.808769531762106,
+          "std": 0.47151185890385733,
+          "ci_low": 8.223310231835054,
+          "ci_high": 9.394228831689158
+        },
+        "brier_score": {
+          "mean": 0.6375999999955365,
+          "std": 0.03412916641208356,
+          "ci_low": 0.5952230427729472,
+          "ci_high": 0.6799769572181258
+        },
+        "expected_calibration_error": {
+          "mean": 0.31879999999399933,
+          "std": 0.017064583206161194,
+          "ci_low": 0.2976115213825564,
+          "ci_high": 0.33998847860544223
+        }
+      },
+      "Random Forest, depth-1 (sklearn reference only)": {
+        "accuracy": {
+          "mean": 0.5054000000000001,
+          "std": 0.014825653442597408,
+          "ci_low": 0.48699151987048117,
+          "ci_high": 0.523808480129519
+        },
+        "macro_precision": {
+          "mean": 0.16291460119200885,
+          "std": 0.05366432268838551,
+          "ci_low": 0.09628154372185112,
+          "ci_high": 0.2295476586621666
+        },
+        "macro_recall": {
+          "mean": 0.15251111038839765,
+          "std": 0.006036643395374616,
+          "ci_low": 0.14501562761436645,
+          "ci_high": 0.16000659316242885
+        },
+        "macro_f1": {
+          "mean": 0.11482754463129771,
+          "std": 0.013284014490685265,
+          "ci_low": 0.0983332620865967,
+          "ci_high": 0.13132182717599872
+        },
+        "roc_auc": {
+          "mean": 0.893826849641347,
+          "std": 0.0021924844033630506,
+          "ci_low": 0.8911045206910678,
+          "ci_high": 0.8965491785916261
+        },
+        "log_loss": {
+          "mean": 1.0721997072491158,
+          "std": 0.00779962309733342,
+          "ci_low": 1.0625151960495984,
+          "ci_high": 1.0818842184486333
+        },
+        "brier_score": {
+          "mean": 0.5768617437069921,
+          "std": 0.0025205645782306408,
+          "ci_low": 0.5737320494150554,
+          "ci_high": 0.5799914379989287
+        },
+        "expected_calibration_error": {
+          "mean": 0.16037896977395064,
+          "std": 0.029481599403668065,
+          "ci_low": 0.12377272918495044,
+          "ci_high": 0.19698521036295083
+        }
+      },
+      "Random Forest, full (sklearn reference only)": {
+        "accuracy": {
+          "mean": 0.7757999999999999,
+          "std": 0.004266145801540311,
+          "ci_low": 0.7705028803471392,
+          "ci_high": 0.7810971196528607
+        },
+        "macro_precision": {
+          "mean": 0.7847637028863204,
+          "std": 0.06931424681196624,
+          "ci_low": 0.6986986980572918,
+          "ci_high": 0.8708287077153489
+        },
+        "macro_recall": {
+          "mean": 0.5465263925470781,
+          "std": 0.02458197297361553,
+          "ci_low": 0.5160038417009218,
+          "ci_high": 0.5770489433932344
+        },
+        "macro_f1": {
+          "mean": 0.5974387864831052,
+          "std": 0.036199209306389174,
+          "ci_low": 0.5524915315239192,
+          "ci_high": 0.6423860414422913
+        },
+        "roc_auc": {
+          "mean": 0.9495122265127037,
+          "std": 0.00725697893041221,
+          "ci_low": 0.9405014970390876,
+          "ci_high": 0.9585229559863199
+        },
+        "log_loss": {
+          "mean": 0.605375363797856,
+          "std": 0.023316382433662484,
+          "ci_low": 0.5764242511616265,
+          "ci_high": 0.6343264764340854
+        },
+        "brier_score": {
+          "mean": 0.3301824800002331,
+          "std": 0.003717205156032834,
+          "ci_low": 0.32556696018404974,
+          "ci_high": 0.33479799981641645
+        },
+        "expected_calibration_error": {
+          "mean": 0.06769200000231049,
+          "std": 0.004281911956302718,
+          "ci_low": 0.06237530408269115,
+          "ci_high": 0.07300869592192982
+        }
+      }
+    }
+  },
+  "experiment_status": {
+    "wdbc": {
+      "status": "complete",
+      "missing_required_custom_models": [],
+      "reference_only_models_are_not_project_implementations": true
+    },
+    "adult": {
+      "status": "complete",
+      "missing_required_custom_models": [],
+      "reference_only_models_are_not_project_implementations": true
+    },
+    "covertype": {
+      "status": "complete",
+      "missing_required_custom_models": [],
+      "reference_only_models_are_not_project_implementations": true
+    }
+  },
+  "model_metadata": {
+    "wdbc": {
+      "AdaBoost (ours)": {
+        "role": "project_implementation",
+        "note": "From-scratch SAMME AdaBoost implemented in src/boosting/adaboost.py."
+      },
+      "AdaBoost SAMME.R (ours, bonus)": {
+        "role": "project_bonus",
+        "note": "Bonus real-valued SAMME.R AdaBoost with smoothed probability stumps; evaluated with log-loss, Brier score, and ECE."
+      },
+      "Single tree (ours)": {
+        "role": "project_implementation",
+        "note": "Team DecisionTree implementation."
+      },
+      "Random Forest (ours)": {
+        "role": "project_implementation",
+        "note": "Team RandomForest implementation."
+      },
+      "Single tree (sklearn reference only)": {
+        "role": "reference_only",
+        "note": "Reference baseline only; not a substitute for the required from-scratch DecisionTree."
+      },
+      "Random Forest, depth-1 (sklearn reference only)": {
+        "role": "reference_only",
+        "note": "Reference baseline only; uses depth-1 sklearn trees to match AdaBoost weak-learner capacity."
+      },
+      "Random Forest, full (sklearn reference only)": {
+        "role": "reference_only",
+        "note": "Reference baseline only; not a substitute for the required from-scratch RandomForest."
+      }
+    },
+    "adult": {
+      "AdaBoost (ours)": {
+        "role": "project_implementation",
+        "note": "From-scratch SAMME AdaBoost implemented in src/boosting/adaboost.py."
+      },
+      "AdaBoost SAMME.R (ours, bonus)": {
+        "role": "project_bonus",
+        "note": "Bonus real-valued SAMME.R AdaBoost with smoothed probability stumps; evaluated with log-loss, Brier score, and ECE."
+      },
+      "Single tree (ours)": {
+        "role": "project_implementation",
+        "note": "Team DecisionTree implementation."
+      },
+      "Random Forest (ours)": {
+        "role": "project_implementation",
+        "note": "Team RandomForest implementation."
+      },
+      "Single tree (sklearn reference only)": {
+        "role": "reference_only",
+        "note": "Reference baseline only; not a substitute for the required from-scratch DecisionTree."
+      },
+      "Random Forest, depth-1 (sklearn reference only)": {
+        "role": "reference_only",
+        "note": "Reference baseline only; uses depth-1 sklearn trees to match AdaBoost weak-learner capacity."
+      },
+      "Random Forest, full (sklearn reference only)": {
+        "role": "reference_only",
+        "note": "Reference baseline only; not a substitute for the required from-scratch RandomForest."
+      }
+    },
+    "covertype": {
+      "AdaBoost (ours)": {
+        "role": "project_implementation",
+        "note": "From-scratch SAMME AdaBoost implemented in src/boosting/adaboost.py."
+      },
+      "AdaBoost SAMME.R (ours, bonus)": {
+        "role": "project_bonus",
+        "note": "Bonus real-valued SAMME.R AdaBoost with smoothed probability stumps; evaluated with log-loss, Brier score, and ECE."
+      },
+      "Single tree (ours)": {
+        "role": "project_implementation",
+        "note": "Team DecisionTree implementation."
+      },
+      "Random Forest (ours)": {
+        "role": "project_implementation",
+        "note": "Team RandomForest implementation."
+      },
+      "Single tree (sklearn reference only)": {
+        "role": "reference_only",
+        "note": "Reference baseline only; not a substitute for the required from-scratch DecisionTree."
+      },
+      "Random Forest, depth-1 (sklearn reference only)": {
+        "role": "reference_only",
+        "note": "Reference baseline only; uses depth-1 sklearn trees to match AdaBoost weak-learner capacity."
+      },
+      "Random Forest, full (sklearn reference only)": {
+        "role": "reference_only",
+        "note": "Reference baseline only; not a substitute for the required from-scratch RandomForest."
+      }
+    }
+  },
+  "bonus_calibration_summary": {
+    "wdbc": {
+      "available": true,
+      "reference": "AdaBoost (ours)",
+      "challenger": "AdaBoost SAMME.R (ours, bonus)",
+      "interpretation": "Positive improvement_reference_minus_sammer means SAMME.R has the lower calibration error on that metric.",
+      "metrics": {
+        "log_loss": {
+          "reference_mean": 0.23713044128015345,
+          "sammer_mean": 0.2786434930261546,
+          "improvement_reference_minus_sammer": -0.041513051746001145,
+          "sammer_improves": false,
+          "lower_is_better": true
+        },
+        "brier_score": {
+          "reference_mean": 0.06414774528019243,
+          "sammer_mean": 0.05459692971196056,
+          "improvement_reference_minus_sammer": 0.009550815568231869,
+          "sammer_improves": true,
+          "lower_is_better": true
+        },
+        "expected_calibration_error": {
+          "reference_mean": 0.035821747982839616,
+          "sammer_mean": 0.029677332441011,
+          "improvement_reference_minus_sammer": 0.006144415541828617,
+          "sammer_improves": true,
+          "lower_is_better": true
+        }
+      }
+    },
+    "adult": {
+      "available": true,
+      "reference": "AdaBoost (ours)",
+      "challenger": "AdaBoost SAMME.R (ours, bonus)",
+      "interpretation": "Positive improvement_reference_minus_sammer means SAMME.R has the lower calibration error on that metric.",
+      "metrics": {
+        "log_loss": {
+          "reference_mean": 0.33233128490710173,
+          "sammer_mean": 0.3257172381765558,
+          "improvement_reference_minus_sammer": 0.006614046730545942,
+          "sammer_improves": true,
+          "lower_is_better": true
+        },
+        "brier_score": {
+          "reference_mean": 0.21198498944991,
+          "sammer_mean": 0.20356276775805338,
+          "improvement_reference_minus_sammer": 0.008422221691856635,
+          "sammer_improves": true,
+          "lower_is_better": true
+        },
+        "expected_calibration_error": {
+          "reference_mean": 0.019954488429575628,
+          "sammer_mean": 0.022386635960987368,
+          "improvement_reference_minus_sammer": -0.00243214753141174,
+          "sammer_improves": false,
+          "lower_is_better": true
+        }
+      }
+    },
+    "covertype": {
+      "available": true,
+      "reference": "AdaBoost (ours)",
+      "challenger": "AdaBoost SAMME.R (ours, bonus)",
+      "interpretation": "Positive improvement_reference_minus_sammer means SAMME.R has the lower calibration error on that metric.",
+      "metrics": {
+        "log_loss": {
+          "reference_mean": 0.9781995017526166,
+          "sammer_mean": 4.67686879529001,
+          "improvement_reference_minus_sammer": -3.6986692935373933,
+          "sammer_improves": false,
+          "lower_is_better": true
+        },
+        "brier_score": {
+          "reference_mean": 0.5563585954135808,
+          "sammer_mean": 0.9075922587510409,
+          "improvement_reference_minus_sammer": -0.3512336633374601,
+          "sammer_improves": false,
+          "lower_is_better": true
+        },
+        "expected_calibration_error": {
+          "reference_mean": 0.1770432155158262,
+          "sammer_mean": 0.43552628399682564,
+          "improvement_reference_minus_sammer": -0.25848306848099944,
+          "sammer_improves": false,
+          "lower_is_better": true
+        }
+      }
+    }
+  },
+  "significance_tests": {
+    "wdbc": [
+      {
+        "model": "AdaBoost SAMME.R (ours, bonus)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": -0.003786659278775151,
+        "t_statistic": -1.6319901155836092,
+        "p_value": 0.17801771545877712,
+        "p_value_holm": 0.28452285330554566,
+        "significant": false
+      },
+      {
+        "model": "Single tree (ours)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": 0.05979484981215812,
+        "t_statistic": 12.982199050184464,
+        "p_value": 0.00020312886116662527,
+        "p_value_holm": 0.0012187731669997515,
+        "significant": true
+      },
+      {
+        "model": "Random Forest (ours)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": 0.011398441771958857,
+        "t_statistic": 2.179089784537741,
+        "p_value": 0.09484095110184855,
+        "p_value_holm": 0.28452285330554566,
+        "significant": false
+      },
+      {
+        "model": "Single tree (sklearn reference only)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": 0.04910081222330851,
+        "t_statistic": 5.515065090168093,
+        "p_value": 0.005275779304039792,
+        "p_value_holm": 0.021103117216159168,
+        "significant": true
+      },
+      {
+        "model": "Random Forest, depth-1 (sklearn reference only)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": 0.0533669045090305,
+        "t_statistic": 8.83093767715188,
+        "p_value": 0.0009075714539174166,
+        "p_value_holm": 0.004537857269587083,
+        "significant": true
+      },
+      {
+        "model": "Random Forest, full (sklearn reference only)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": 0.011399860654468585,
+        "t_statistic": 1.8610135358714603,
+        "p_value": 0.1362405008276907,
+        "p_value_holm": 0.28452285330554566,
+        "significant": false
+      }
+    ],
+    "adult": [
+      {
+        "model": "AdaBoost SAMME.R (ours, bonus)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": -0.011720538977647865,
+        "t_statistic": -3.374768329513137,
+        "p_value": 0.02792022068171936,
+        "p_value_holm": 0.08376066204515809,
+        "significant": false
+      },
+      {
+        "model": "Single tree (ours)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": 0.04223040784103862,
+        "t_statistic": 6.408589055742845,
+        "p_value": 0.003045785925765147,
+        "p_value_holm": 0.012183143703060588,
+        "significant": true
+      },
+      {
+        "model": "Random Forest (ours)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": 0.0030309986456513727,
+        "t_statistic": 1.1924201238913463,
+        "p_value": 0.29899800935609133,
+        "p_value_holm": 0.48685434678249756,
+        "significant": false
+      },
+      {
+        "model": "Single tree (sklearn reference only)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": 0.047226502686661134,
+        "t_statistic": 12.186990411404812,
+        "p_value": 0.00026020679459983577,
+        "p_value_holm": 0.0013010339729991789,
+        "significant": true
+      },
+      {
+        "model": "Random Forest, depth-1 (sklearn reference only)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": 0.35205531344587065,
+        "t_statistic": 41.69284430466475,
+        "p_value": 1.978068792464206e-06,
+        "p_value_holm": 1.1868412754785234e-05,
+        "significant": true
+      },
+      {
+        "model": "Random Forest, full (sklearn reference only)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": 0.006816857753226935,
+        "t_statistic": 1.3669484432538248,
+        "p_value": 0.24342717339124878,
+        "p_value_holm": 0.48685434678249756,
+        "significant": false
+      }
+    ],
+    "covertype": [
+      {
+        "model": "AdaBoost SAMME.R (ours, bonus)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": 0.0017689882100562215,
+        "t_statistic": 0.195968588450108,
+        "p_value": 0.8541877493566973,
+        "p_value_holm": 0.8541877493566973,
+        "significant": false
+      },
+      {
+        "model": "Single tree (ours)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": -0.20001357494475308,
+        "t_statistic": -15.141202287452273,
+        "p_value": 0.00011091367621436615,
+        "p_value_holm": 0.0003327410286430984,
+        "significant": true
+      },
+      {
+        "model": "Random Forest (ours)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": -0.17560845881186768,
+        "t_statistic": -8.522562771524669,
+        "p_value": 0.0010399787448965093,
+        "p_value_holm": 0.0020799574897930185,
+        "significant": true
+      },
+      {
+        "model": "Single tree (sklearn reference only)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": -0.21338715492006463,
+        "t_statistic": -22.512638229037098,
+        "p_value": 2.3054435295569494e-05,
+        "p_value_holm": 0.00011527217647784748,
+        "significant": true
+      },
+      {
+        "model": "Random Forest, depth-1 (sklearn reference only)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": 0.20404990820692476,
+        "t_statistic": 20.803235978399744,
+        "p_value": 3.154765191631754e-05,
+        "p_value_holm": 0.00012619060766527016,
+        "significant": true
+      },
+      {
+        "model": "Random Forest, full (sklearn reference only)",
+        "n_pairs": 5,
+        "mean_difference_reference_minus_model": -0.2785613336448828,
+        "t_statistic": -24.32759526697861,
+        "p_value": 1.6938626948565416e-05,
+        "p_value_holm": 0.0001016317616913925,
+        "significant": true
+      }
+    ]
+  },
+  "figure_paths": {
+    "macro_f1_heatmap": "figures\\head_to_head_macro_f1.png"
+  }
+}

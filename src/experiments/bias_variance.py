@@ -50,6 +50,7 @@ class BiasVarianceConfig:
     n_jobs: int = 1
     data_dir: Path = field(default_factory=lambda: Path("data"))
     output_dir: Path = field(default_factory=lambda: Path("results"))
+    figure_dir: Path = field(default_factory=lambda: Path("figures"))
 
 
 def setup_logger(name: str) -> logging.Logger:
@@ -194,6 +195,71 @@ def build_model_factories(config: BiasVarianceConfig) -> Dict[str, ModelFactory]
     return factories
 
 
+def _short_model_label(model_name: str) -> str:
+    """Return compact labels for the bias-variance bar chart."""
+    replacements = {
+        "Decision stump (ours)": "Stump",
+        "AdaBoost (ours)": "AdaBoost",
+        "Random Forest (ours)": "RF ours",
+        "Random Forest (sklearn ref)": "RF sklearn ref",
+    }
+    return replacements.get(model_name, model_name)
+
+
+def plot_bias_variance_summary(
+    all_results: Dict[str, Dict[str, Any]],
+    path: Path,
+) -> Optional[Path]:
+    """Save a grouped bar chart for loss, bias, and variance."""
+    try:
+        import matplotlib.pyplot as plt
+    except Exception as exc:
+        logger.warning(
+            "Skipping bias-variance plot export because matplotlib is unavailable: %s",
+            exc,
+        )
+        return None
+
+    if not all_results:
+        logger.warning("Skipping bias-variance plot export because there are no results.")
+        return None
+
+    model_names = list(all_results.keys())
+    metric_specs = (
+        ("expected_loss", "Expected loss"),
+        ("bias_squared", "Bias squared"),
+        ("variance", "Variance"),
+    )
+    x_positions = np.arange(len(model_names))
+    width = 0.24
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure, axis = plt.subplots(figsize=(9.2, 5.2))
+    for metric_index, (metric, label) in enumerate(metric_specs):
+        values = [
+            float(all_results[model_name][metric])
+            for model_name in model_names
+        ]
+        offset = (metric_index - 1) * width
+        axis.bar(x_positions + offset, values, width=width, label=label)
+
+    axis.set_title("Bias-variance decomposition on WDBC")
+    axis.set_ylabel("0-1 loss decomposition value")
+    axis.set_xticks(x_positions)
+    axis.set_xticklabels(
+        [_short_model_label(model_name) for model_name in model_names],
+        rotation=18,
+        ha="right",
+    )
+    axis.set_ylim(bottom=0.0)
+    axis.grid(axis="y", alpha=0.25)
+    axis.legend()
+    figure.tight_layout()
+    figure.savefig(path, dpi=200)
+    plt.close(figure)
+    return path
+
+
 def export_results(
     all_results: Dict[str, Dict[str, Any]],
     dataset: DatasetBundle,
@@ -201,6 +267,10 @@ def export_results(
 ) -> None:
     """Persist scalar summaries to results/ as JSON and CSV."""
     scalar_keys = ("expected_loss", "bias_squared", "variance")
+    figure_path = plot_bias_variance_summary(
+        all_results,
+        config.figure_dir / "bias_variance_decomposition.png",
+    )
     payload = {
         "config": vars(config),
         "dataset": {
@@ -217,6 +287,9 @@ def export_results(
                 "per_class": result["per_class"],
             }
             for name, result in all_results.items()
+        },
+        "figure_paths": {
+            "decomposition": figure_path,
         },
     }
     export_json(payload, config.output_dir / "bias_variance.json")
@@ -236,7 +309,7 @@ def export_results(
 def main(config: Optional[BiasVarianceConfig] = None) -> Dict[str, Dict[str, Any]]:
     """Run Experiment 6 and export the decomposition table."""
     config = config or BiasVarianceConfig()
-    dataset = load_wdbc(config.data_dir)
+    dataset = load_wdbc(Path(config.data_dir) / "wdbc.data")
     X, y = dataset.X, dataset.y
 
     X_train, X_test, y_train, y_test = train_test_split(

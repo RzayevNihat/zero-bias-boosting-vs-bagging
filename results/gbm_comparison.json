@@ -1,0 +1,794 @@
+{
+  "config": {
+    "datasets": [
+      "wdbc",
+      "adult",
+      "covertype",
+      "mnist"
+    ],
+    "n_estimators": 100,
+    "adaboost_learning_rate": 1.0,
+    "gbm_learning_rate": 0.1,
+    "gbm_max_depth": 3,
+    "gbm_min_samples_split": 2,
+    "test_size": 0.2,
+    "random_state": 42,
+    "adult_max_samples": 5000,
+    "covertype_max_samples": 5000,
+    "mnist_max_samples": 1000,
+    "mnist_digits": [
+      "3",
+      "8"
+    ],
+    "include_sklearn_reference": true,
+    "data_dir": "data",
+    "output_dir": "results",
+    "figure_dir": "figures"
+  },
+  "load_failures": [
+    {
+      "dataset": "mnist",
+      "status": "failed_to_load",
+      "error": "FileNotFoundError: MNIST was requested, but no local MNIST file is available in data. Runtime fetching from sklearn/OpenML is disabled for this project. Add a local MNIST subset file before enabling this dataset. Requested digits=('3', '8'), max_samples=1000."
+    }
+  ],
+  "datasets": {
+    "wdbc": {
+      "name": "wdbc",
+      "task": "binary_classification",
+      "source": "data\\wdbc.data",
+      "notes": "Wisconsin Diagnostic Breast Cancer dataset loaded from the local data directory; labels are M=1 and B=0.",
+      "n_samples": 569,
+      "n_features": 30,
+      "class_counts": {
+        "0": 357,
+        "1": 212
+      },
+      "train_size": 455,
+      "test_size": 114
+    },
+    "adult": {
+      "name": "adult",
+      "task": "binary_classification",
+      "source": "data\\adult.data; data\\adult.test",
+      "notes": "Adult Income local train/test files combined, rows with '?' removed, categorical features one-hot encoded. Dropped 3620 rows with missing values. Limited to at most 5000 samples.",
+      "n_samples": 5000,
+      "n_features": 104,
+      "class_counts": {
+        "0": 3809,
+        "1": 1191
+      },
+      "train_size": 4000,
+      "test_size": 1000
+    },
+    "covertype (1 vs 2)": {
+      "name": "covertype (1 vs 2)",
+      "task": "binary_from_multiclass",
+      "source": "data\\covtype.data",
+      "notes": "Covertype dataset loaded from the local data directory; original cover-type labels are kept. Random reservoir subset limited to at most 5000 samples. For the binary GBM bonus, kept the two largest classes only: 1 -> 0, 2 -> 1.",
+      "n_samples": 4257,
+      "n_features": 54,
+      "class_counts": {
+        "0": 1800,
+        "1": 2457
+      },
+      "train_size": 3405,
+      "test_size": 852
+    }
+  },
+  "comparison_against_adaboost": {
+    "wdbc": {
+      "available": true,
+      "reference": "AdaBoost (ours)",
+      "challenger": "Gradient Boosting (ours, bonus)",
+      "metrics": {
+        "accuracy": {
+          "adaboost": 0.9736842105263158,
+          "gradient_boosting": 0.956140350877193,
+          "improvement": -0.01754385964912286,
+          "gbm_improves": false,
+          "lower_is_better": false
+        },
+        "macro_precision": {
+          "adaboost": 0.98,
+          "gradient_boosting": 0.9675324675324675,
+          "improvement": -0.012467532467532516,
+          "gbm_improves": false,
+          "lower_is_better": false
+        },
+        "macro_recall": {
+          "adaboost": 0.9642857142857143,
+          "gradient_boosting": 0.9404761904761905,
+          "improvement": -0.023809523809523836,
+          "gbm_improves": false,
+          "lower_is_better": false
+        },
+        "macro_f1": {
+          "adaboost": 0.9712773998488284,
+          "gradient_boosting": 0.951575906889814,
+          "improvement": -0.019701492959014466,
+          "gbm_improves": false,
+          "lower_is_better": false
+        },
+        "roc_auc": {
+          "adaboost": 0.9854497354497355,
+          "gradient_boosting": 0.9933862433862434,
+          "improvement": 0.007936507936507908,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "log_loss": {
+          "adaboost": 0.32822510463577315,
+          "gradient_boosting": 0.19923787525833103,
+          "improvement": 0.12898722937744211,
+          "gbm_improves": true,
+          "lower_is_better": true
+        },
+        "brier_score": {
+          "adaboost": 0.047462919784286385,
+          "gradient_boosting": 0.09040171571599415,
+          "improvement": -0.04293879593170776,
+          "gbm_improves": false,
+          "lower_is_better": true
+        },
+        "expected_calibration_error": {
+          "adaboost": 0.022840056300019083,
+          "gradient_boosting": 0.09502874462774408,
+          "improvement": -0.07218868832772499,
+          "gbm_improves": false,
+          "lower_is_better": true
+        }
+      }
+    },
+    "adult": {
+      "available": true,
+      "reference": "AdaBoost (ours)",
+      "challenger": "Gradient Boosting (ours, bonus)",
+      "metrics": {
+        "accuracy": {
+          "adaboost": 0.825,
+          "gradient_boosting": 0.831,
+          "improvement": 0.006000000000000005,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "macro_precision": {
+          "adaboost": 0.774399135631767,
+          "gradient_boosting": 0.7949248259975726,
+          "improvement": 0.02052569036580565,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "macro_recall": {
+          "adaboost": 0.7002525419616665,
+          "gradient_boosting": 0.6969661880500231,
+          "improvement": -0.003286353911643447,
+          "gbm_improves": false,
+          "lower_is_better": false
+        },
+        "macro_f1": {
+          "adaboost": 0.7239638787018416,
+          "gradient_boosting": 0.7249165390268557,
+          "improvement": 0.0009526603250140653,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "roc_auc": {
+          "adaboost": 0.8931852268466441,
+          "gradient_boosting": 0.8909630781446437,
+          "improvement": -0.002222148702000437,
+          "gbm_improves": false,
+          "lower_is_better": false
+        },
+        "log_loss": {
+          "adaboost": 0.33463674740361843,
+          "gradient_boosting": 0.3700177931158567,
+          "improvement": -0.03538104571223827,
+          "gbm_improves": false,
+          "lower_is_better": true
+        },
+        "brier_score": {
+          "adaboost": 0.22128863078090696,
+          "gradient_boosting": 0.22856727051916456,
+          "improvement": -0.007278639738257597,
+          "gbm_improves": false,
+          "lower_is_better": true
+        },
+        "expected_calibration_error": {
+          "adaboost": 0.0364312638799365,
+          "gradient_boosting": 0.06523853811311747,
+          "improvement": -0.028807274233180975,
+          "gbm_improves": false,
+          "lower_is_better": true
+        }
+      }
+    },
+    "covertype (1 vs 2)": {
+      "available": true,
+      "reference": "AdaBoost (ours)",
+      "challenger": "Gradient Boosting (ours, bonus)",
+      "metrics": {
+        "accuracy": {
+          "adaboost": 0.7816901408450704,
+          "gradient_boosting": 0.7910798122065728,
+          "improvement": 0.009389671361502372,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "macro_precision": {
+          "adaboost": 0.7773552389705882,
+          "gradient_boosting": 0.787339120023945,
+          "improvement": 0.009983881053356791,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "macro_recall": {
+          "adaboost": 0.7725948509485094,
+          "gradient_boosting": 0.7818428184281843,
+          "improvement": 0.009247967479674823,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "macro_f1": {
+          "adaboost": 0.7745133750711439,
+          "gradient_boosting": 0.7840236517855617,
+          "improvement": 0.009510276714417731,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "roc_auc": {
+          "adaboost": 0.8420025971093045,
+          "gradient_boosting": 0.8611167570009033,
+          "improvement": 0.019114159891598814,
+          "gbm_improves": true,
+          "lower_is_better": false
+        },
+        "log_loss": {
+          "adaboost": 0.4823243127301561,
+          "gradient_boosting": 0.48811783475693193,
+          "improvement": -0.005793522026775855,
+          "gbm_improves": false,
+          "lower_is_better": true
+        },
+        "brier_score": {
+          "adaboost": 0.31544120736584386,
+          "gradient_boosting": 0.3136981411670003,
+          "improvement": 0.001743066198843568,
+          "gbm_improves": true,
+          "lower_is_better": true
+        },
+        "expected_calibration_error": {
+          "adaboost": 0.030930475944233086,
+          "gradient_boosting": 0.07845570243397995,
+          "improvement": -0.047525226489746865,
+          "gbm_improves": false,
+          "lower_is_better": true
+        }
+      }
+    }
+  },
+  "figure_paths": {
+    "metric_comparison": "figures\\gbm_comparison_metrics.png"
+  },
+  "results": {
+    "wdbc": {
+      "dataset": {
+        "name": "wdbc",
+        "task": "binary_classification",
+        "source": "data\\wdbc.data",
+        "notes": "Wisconsin Diagnostic Breast Cancer dataset loaded from the local data directory; labels are M=1 and B=0.",
+        "n_samples": 569,
+        "n_features": 30,
+        "class_counts": {
+          "0": 357,
+          "1": 212
+        },
+        "train_size": 455,
+        "test_size": 114
+      },
+      "models": {
+        "AdaBoost (ours)": {
+          "status": "ok",
+          "role": "project_implementation",
+          "note": "From-scratch discrete SAMME AdaBoost with weighted stumps.",
+          "n_estimators": 100,
+          "training_time_seconds": 0.4664049999846611,
+          "train_metrics": {
+            "accuracy": 1.0,
+            "macro_precision": 1.0,
+            "macro_recall": 1.0,
+            "macro_f1": 1.0,
+            "roc_auc": 1.0,
+            "log_loss": 1.0174213191942588e-05,
+            "brier_score": 1.0296863963454622e-08,
+            "expected_calibration_error": 1.0171637444988946e-05
+          },
+          "test_metrics": {
+            "accuracy": 0.9736842105263158,
+            "macro_precision": 0.98,
+            "macro_recall": 0.9642857142857143,
+            "macro_f1": 0.9712773998488284,
+            "roc_auc": 0.9854497354497355,
+            "log_loss": 0.32822510463577315,
+            "brier_score": 0.047462919784286385,
+            "expected_calibration_error": 0.022840056300019083
+          }
+        },
+        "Gradient Boosting (ours, bonus)": {
+          "status": "ok",
+          "role": "project_bonus",
+          "note": "From-scratch binary GBM trained by logistic log-loss.",
+          "n_estimators": 100,
+          "training_time_seconds": 1.2216551000019535,
+          "train_metrics": {
+            "accuracy": 0.989010989010989,
+            "macro_precision": 0.9913793103448276,
+            "macro_recall": 0.9852941176470589,
+            "macro_f1": 0.9881894873458792,
+            "roc_auc": 0.9991124871001033,
+            "log_loss": 0.13397025548823008,
+            "brier_score": 0.038952870320930894,
+            "expected_calibration_error": 0.11248941976652374
+          },
+          "test_metrics": {
+            "accuracy": 0.956140350877193,
+            "macro_precision": 0.9675324675324675,
+            "macro_recall": 0.9404761904761905,
+            "macro_f1": 0.951575906889814,
+            "roc_auc": 0.9933862433862434,
+            "log_loss": 0.19923787525833103,
+            "brier_score": 0.09040171571599415,
+            "expected_calibration_error": 0.09502874462774408
+          },
+          "train_log_loss_curve": {
+            "first": 0.6405402939422429,
+            "last": 0.13397025548823008,
+            "last5": [
+              0.13845538650965414,
+              0.13727388066119056,
+              0.13614733390732756,
+              0.1350464011243027,
+              0.13397025548823008
+            ]
+          }
+        },
+        "Gradient Boosting (sklearn reference only)": {
+          "status": "ok",
+          "role": "reference_only",
+          "note": "Sanity-check baseline only; not used as the project implementation.",
+          "n_estimators": 100,
+          "training_time_seconds": 0.37950710000586696,
+          "train_metrics": {
+            "accuracy": 1.0,
+            "macro_precision": 1.0,
+            "macro_recall": 1.0,
+            "macro_f1": 1.0,
+            "roc_auc": 1.0,
+            "log_loss": 0.002221346393782089,
+            "brier_score": 5.5197955555443155e-05,
+            "expected_calibration_error": 0.0022072932286418823
+          },
+          "test_metrics": {
+            "accuracy": 0.9649122807017544,
+            "macro_precision": 0.9736842105263157,
+            "macro_recall": 0.9523809523809523,
+            "macro_f1": 0.9614864864864865,
+            "roc_auc": 0.9943783068783069,
+            "log_loss": 0.12797015150131633,
+            "brier_score": 0.06637144571087103,
+            "expected_calibration_error": 0.03440887737237238
+          }
+        }
+      },
+      "comparison_against_adaboost": {
+        "available": true,
+        "reference": "AdaBoost (ours)",
+        "challenger": "Gradient Boosting (ours, bonus)",
+        "metrics": {
+          "accuracy": {
+            "adaboost": 0.9736842105263158,
+            "gradient_boosting": 0.956140350877193,
+            "improvement": -0.01754385964912286,
+            "gbm_improves": false,
+            "lower_is_better": false
+          },
+          "macro_precision": {
+            "adaboost": 0.98,
+            "gradient_boosting": 0.9675324675324675,
+            "improvement": -0.012467532467532516,
+            "gbm_improves": false,
+            "lower_is_better": false
+          },
+          "macro_recall": {
+            "adaboost": 0.9642857142857143,
+            "gradient_boosting": 0.9404761904761905,
+            "improvement": -0.023809523809523836,
+            "gbm_improves": false,
+            "lower_is_better": false
+          },
+          "macro_f1": {
+            "adaboost": 0.9712773998488284,
+            "gradient_boosting": 0.951575906889814,
+            "improvement": -0.019701492959014466,
+            "gbm_improves": false,
+            "lower_is_better": false
+          },
+          "roc_auc": {
+            "adaboost": 0.9854497354497355,
+            "gradient_boosting": 0.9933862433862434,
+            "improvement": 0.007936507936507908,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "log_loss": {
+            "adaboost": 0.32822510463577315,
+            "gradient_boosting": 0.19923787525833103,
+            "improvement": 0.12898722937744211,
+            "gbm_improves": true,
+            "lower_is_better": true
+          },
+          "brier_score": {
+            "adaboost": 0.047462919784286385,
+            "gradient_boosting": 0.09040171571599415,
+            "improvement": -0.04293879593170776,
+            "gbm_improves": false,
+            "lower_is_better": true
+          },
+          "expected_calibration_error": {
+            "adaboost": 0.022840056300019083,
+            "gradient_boosting": 0.09502874462774408,
+            "improvement": -0.07218868832772499,
+            "gbm_improves": false,
+            "lower_is_better": true
+          }
+        }
+      }
+    },
+    "adult": {
+      "dataset": {
+        "name": "adult",
+        "task": "binary_classification",
+        "source": "data\\adult.data; data\\adult.test",
+        "notes": "Adult Income local train/test files combined, rows with '?' removed, categorical features one-hot encoded. Dropped 3620 rows with missing values. Limited to at most 5000 samples.",
+        "n_samples": 5000,
+        "n_features": 104,
+        "class_counts": {
+          "0": 3809,
+          "1": 1191
+        },
+        "train_size": 4000,
+        "test_size": 1000
+      },
+      "models": {
+        "AdaBoost (ours)": {
+          "status": "ok",
+          "role": "project_implementation",
+          "note": "From-scratch discrete SAMME AdaBoost with weighted stumps.",
+          "n_estimators": 100,
+          "training_time_seconds": 2.0724767000065185,
+          "train_metrics": {
+            "accuracy": 0.8525,
+            "macro_precision": 0.8224965238235333,
+            "macro_recall": 0.7427328619725042,
+            "macro_f1": 0.7701768197224126,
+            "roc_auc": 0.9058919874054296,
+            "log_loss": 0.31326532558153847,
+            "brier_score": 0.20120440809825044,
+            "expected_calibration_error": 0.01016808244328678
+          },
+          "test_metrics": {
+            "accuracy": 0.825,
+            "macro_precision": 0.774399135631767,
+            "macro_recall": 0.7002525419616665,
+            "macro_f1": 0.7239638787018416,
+            "roc_auc": 0.8931852268466441,
+            "log_loss": 0.33463674740361843,
+            "brier_score": 0.22128863078090696,
+            "expected_calibration_error": 0.0364312638799365
+          }
+        },
+        "Gradient Boosting (ours, bonus)": {
+          "status": "ok",
+          "role": "project_bonus",
+          "note": "From-scratch binary GBM trained by logistic log-loss.",
+          "n_estimators": 100,
+          "training_time_seconds": 9.955820900009712,
+          "train_metrics": {
+            "accuracy": 0.8535,
+            "macro_precision": 0.830568611960556,
+            "macro_recall": 0.737620235065127,
+            "macro_f1": 0.7678081445453735,
+            "roc_auc": 0.9056335321653659,
+            "log_loss": 0.3535227553742166,
+            "brier_score": 0.21312867166884328,
+            "expected_calibration_error": 0.060487347431560694
+          },
+          "test_metrics": {
+            "accuracy": 0.831,
+            "macro_precision": 0.7949248259975726,
+            "macro_recall": 0.6969661880500231,
+            "macro_f1": 0.7249165390268557,
+            "roc_auc": 0.8909630781446437,
+            "log_loss": 0.3700177931158567,
+            "brier_score": 0.22856727051916456,
+            "expected_calibration_error": 0.06523853811311747
+          },
+          "train_log_loss_curve": {
+            "first": 0.5420862523691206,
+            "last": 0.3535227553742166,
+            "last5": [
+              0.35555594726127815,
+              0.35502838155365235,
+              0.35454890471060785,
+              0.35404118542775787,
+              0.3535227553742166
+            ]
+          }
+        },
+        "Gradient Boosting (sklearn reference only)": {
+          "status": "ok",
+          "role": "reference_only",
+          "note": "Sanity-check baseline only; not used as the project implementation.",
+          "n_estimators": 100,
+          "training_time_seconds": 2.138844200002495,
+          "train_metrics": {
+            "accuracy": 0.8825,
+            "macro_precision": 0.8636099458441014,
+            "macro_recall": 0.7966778600801504,
+            "macro_f1": 0.822625177563519,
+            "roc_auc": 0.9368253431462527,
+            "log_loss": 0.2694076467988883,
+            "brier_score": 0.1659531842640099,
+            "expected_calibration_error": 0.025584969444609
+          },
+          "test_metrics": {
+            "accuracy": 0.843,
+            "macro_precision": 0.8028301140815608,
+            "macro_recall": 0.7322889785835593,
+            "macro_f1": 0.756956538565734,
+            "roc_auc": 0.9006842894638171,
+            "log_loss": 0.3231979146627669,
+            "brier_score": 0.2084773863732608,
+            "expected_calibration_error": 0.025682922781258034
+          }
+        }
+      },
+      "comparison_against_adaboost": {
+        "available": true,
+        "reference": "AdaBoost (ours)",
+        "challenger": "Gradient Boosting (ours, bonus)",
+        "metrics": {
+          "accuracy": {
+            "adaboost": 0.825,
+            "gradient_boosting": 0.831,
+            "improvement": 0.006000000000000005,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "macro_precision": {
+            "adaboost": 0.774399135631767,
+            "gradient_boosting": 0.7949248259975726,
+            "improvement": 0.02052569036580565,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "macro_recall": {
+            "adaboost": 0.7002525419616665,
+            "gradient_boosting": 0.6969661880500231,
+            "improvement": -0.003286353911643447,
+            "gbm_improves": false,
+            "lower_is_better": false
+          },
+          "macro_f1": {
+            "adaboost": 0.7239638787018416,
+            "gradient_boosting": 0.7249165390268557,
+            "improvement": 0.0009526603250140653,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "roc_auc": {
+            "adaboost": 0.8931852268466441,
+            "gradient_boosting": 0.8909630781446437,
+            "improvement": -0.002222148702000437,
+            "gbm_improves": false,
+            "lower_is_better": false
+          },
+          "log_loss": {
+            "adaboost": 0.33463674740361843,
+            "gradient_boosting": 0.3700177931158567,
+            "improvement": -0.03538104571223827,
+            "gbm_improves": false,
+            "lower_is_better": true
+          },
+          "brier_score": {
+            "adaboost": 0.22128863078090696,
+            "gradient_boosting": 0.22856727051916456,
+            "improvement": -0.007278639738257597,
+            "gbm_improves": false,
+            "lower_is_better": true
+          },
+          "expected_calibration_error": {
+            "adaboost": 0.0364312638799365,
+            "gradient_boosting": 0.06523853811311747,
+            "improvement": -0.028807274233180975,
+            "gbm_improves": false,
+            "lower_is_better": true
+          }
+        }
+      }
+    },
+    "covertype (1 vs 2)": {
+      "dataset": {
+        "name": "covertype (1 vs 2)",
+        "task": "binary_from_multiclass",
+        "source": "data\\covtype.data",
+        "notes": "Covertype dataset loaded from the local data directory; original cover-type labels are kept. Random reservoir subset limited to at most 5000 samples. For the binary GBM bonus, kept the two largest classes only: 1 -> 0, 2 -> 1.",
+        "n_samples": 4257,
+        "n_features": 54,
+        "class_counts": {
+          "0": 1800,
+          "1": 2457
+        },
+        "train_size": 3405,
+        "test_size": 852
+      },
+      "models": {
+        "AdaBoost (ours)": {
+          "status": "ok",
+          "role": "project_implementation",
+          "note": "From-scratch discrete SAMME AdaBoost with weighted stumps.",
+          "n_estimators": 100,
+          "training_time_seconds": 2.620142699975986,
+          "train_metrics": {
+            "accuracy": 0.7691629955947137,
+            "macro_precision": 0.7637733841463197,
+            "macro_recall": 0.7617790500424089,
+            "macro_f1": 0.7626747619236793,
+            "roc_auc": 0.8432269578739044,
+            "log_loss": 0.48344014793904916,
+            "brier_score": 0.3192007850644391,
+            "expected_calibration_error": 0.03386680147986009
+          },
+          "test_metrics": {
+            "accuracy": 0.7816901408450704,
+            "macro_precision": 0.7773552389705882,
+            "macro_recall": 0.7725948509485094,
+            "macro_f1": 0.7745133750711439,
+            "roc_auc": 0.8420025971093045,
+            "log_loss": 0.4823243127301561,
+            "brier_score": 0.31544120736584386,
+            "expected_calibration_error": 0.030930475944233086
+          }
+        },
+        "Gradient Boosting (ours, bonus)": {
+          "status": "ok",
+          "role": "project_bonus",
+          "note": "From-scratch binary GBM trained by logistic log-loss.",
+          "n_estimators": 100,
+          "training_time_seconds": 6.722718099976191,
+          "train_metrics": {
+            "accuracy": 0.7829662261380324,
+            "macro_precision": 0.7782348910276151,
+            "macro_recall": 0.7752226463104326,
+            "macro_f1": 0.7765268041813008,
+            "roc_auc": 0.8662125388747526,
+            "log_loss": 0.4843440992568002,
+            "brier_score": 0.31100484290955355,
+            "expected_calibration_error": 0.07727461684660639
+          },
+          "test_metrics": {
+            "accuracy": 0.7910798122065728,
+            "macro_precision": 0.787339120023945,
+            "macro_recall": 0.7818428184281843,
+            "macro_f1": 0.7840236517855617,
+            "roc_auc": 0.8611167570009033,
+            "log_loss": 0.48811783475693193,
+            "brier_score": 0.3136981411670003,
+            "expected_calibration_error": 0.07845570243397995
+          },
+          "train_log_loss_curve": {
+            "first": 0.6742322743773524,
+            "last": 0.4843440992568002,
+            "last5": [
+              0.48681151468382666,
+              0.4862133937027905,
+              0.48561345509857484,
+              0.4850434123023083,
+              0.4843440992568002
+            ]
+          }
+        },
+        "Gradient Boosting (sklearn reference only)": {
+          "status": "ok",
+          "role": "reference_only",
+          "note": "Sanity-check baseline only; not used as the project implementation.",
+          "n_estimators": 100,
+          "training_time_seconds": 1.1243517000111751,
+          "train_metrics": {
+            "accuracy": 0.8234948604992658,
+            "macro_precision": 0.8197061262340153,
+            "macro_recall": 0.8177586938083121,
+            "macro_f1": 0.8186597138881915,
+            "roc_auc": 0.9143612171331637,
+            "log_loss": 0.38746095346683307,
+            "brier_score": 0.24249976705192722,
+            "expected_calibration_error": 0.05651668429077211
+          },
+          "test_metrics": {
+            "accuracy": 0.7934272300469484,
+            "macro_precision": 0.790234203407856,
+            "macro_recall": 0.7835027100271003,
+            "macro_f1": 0.7860701343909607,
+            "roc_auc": 0.8768574977416441,
+            "log_loss": 0.44003307649473816,
+            "brier_score": 0.2840085344761,
+            "expected_calibration_error": 0.03513664590844162
+          }
+        }
+      },
+      "comparison_against_adaboost": {
+        "available": true,
+        "reference": "AdaBoost (ours)",
+        "challenger": "Gradient Boosting (ours, bonus)",
+        "metrics": {
+          "accuracy": {
+            "adaboost": 0.7816901408450704,
+            "gradient_boosting": 0.7910798122065728,
+            "improvement": 0.009389671361502372,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "macro_precision": {
+            "adaboost": 0.7773552389705882,
+            "gradient_boosting": 0.787339120023945,
+            "improvement": 0.009983881053356791,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "macro_recall": {
+            "adaboost": 0.7725948509485094,
+            "gradient_boosting": 0.7818428184281843,
+            "improvement": 0.009247967479674823,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "macro_f1": {
+            "adaboost": 0.7745133750711439,
+            "gradient_boosting": 0.7840236517855617,
+            "improvement": 0.009510276714417731,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "roc_auc": {
+            "adaboost": 0.8420025971093045,
+            "gradient_boosting": 0.8611167570009033,
+            "improvement": 0.019114159891598814,
+            "gbm_improves": true,
+            "lower_is_better": false
+          },
+          "log_loss": {
+            "adaboost": 0.4823243127301561,
+            "gradient_boosting": 0.48811783475693193,
+            "improvement": -0.005793522026775855,
+            "gbm_improves": false,
+            "lower_is_better": true
+          },
+          "brier_score": {
+            "adaboost": 0.31544120736584386,
+            "gradient_boosting": 0.3136981411670003,
+            "improvement": 0.001743066198843568,
+            "gbm_improves": true,
+            "lower_is_better": true
+          },
+          "expected_calibration_error": {
+            "adaboost": 0.030930475944233086,
+            "gradient_boosting": 0.07845570243397995,
+            "improvement": -0.047525226489746865,
+            "gbm_improves": false,
+            "lower_is_better": true
+          }
+        }
+      }
+    }
+  }
+}

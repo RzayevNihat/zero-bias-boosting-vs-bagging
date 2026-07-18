@@ -47,7 +47,7 @@ class AdaBoostScalingConfig:
     covertype_max_samples: Optional[int] = 5000
     data_dir: Path = field(default_factory=lambda: Path("data"))
     output_dir: Path = field(default_factory=lambda: Path("results"))
-    figure_dir: Path = field(default_factory=lambda: Path("report") / "figures")
+    figure_dir: Path = field(default_factory=lambda: Path("figures"))
 
 
 def setup_logger(name: str) -> logging.Logger:
@@ -290,7 +290,7 @@ def run_experiment(config: AdaBoostScalingConfig) -> Dict[str, Any]:
 
 
 def export_results(result: Dict[str, Any], config: AdaBoostScalingConfig) -> None:
-    """Persist the scaling curves to results/ and plots to report/figures/."""
+    """Persist the scaling curves to results/ and plots to figures/."""
     rows = []
     for dataset_name, dataset_result in result["results"].items():
         for row in dataset_result["rows"]:

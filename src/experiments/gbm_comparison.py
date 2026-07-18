@@ -70,6 +70,7 @@ class GBMComparisonConfig:
     include_sklearn_reference: bool = True
     data_dir: Path = field(default_factory=lambda: Path("data"))
     output_dir: Path = field(default_factory=lambda: Path("results"))
+    figure_dir: Path = field(default_factory=lambda: Path("figures"))
 
 
 def setup_logger(name: str) -> logging.Logger:
@@ -441,15 +442,100 @@ def run_experiment(config: GBMComparisonConfig) -> Dict[str, Any]:
     }
 
 
+def _short_model_label(model_name: str) -> str:
+    """Return compact labels that fit in grouped comparison plots."""
+    replacements = {
+        "AdaBoost (ours)": "AdaBoost",
+        "Gradient Boosting (ours, bonus)": "GBM ours",
+        "Gradient Boosting (sklearn reference only)": "GBM sklearn ref",
+    }
+    return replacements.get(model_name, model_name)
+
+
+def plot_gbm_metric_comparison(
+    results: Dict[str, Any],
+    path: Path,
+) -> Optional[Path]:
+    """Save a grouped test-metric chart for the GBM comparison."""
+    try:
+        import matplotlib.pyplot as plt
+    except Exception as exc:
+        logger.warning("Skipping GBM plot export because matplotlib is unavailable: %s", exc)
+        return None
+
+    dataset_results = results.get("results", {})
+    dataset_names = list(dataset_results.keys())
+    model_names: list[str] = []
+    for dataset_result in dataset_results.values():
+        for model_name in dataset_result["models"]:
+            if model_name not in model_names:
+                model_names.append(model_name)
+
+    if not dataset_names or not model_names:
+        logger.warning("Skipping GBM plot export because there are no successful results.")
+        return None
+
+    metrics = (
+        ("macro_f1", "Test macro-F1", False),
+        ("log_loss", "Test log loss", True),
+    )
+    x_positions = np.arange(len(dataset_names))
+    width = min(0.8 / max(len(model_names), 1), 0.24)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure, axes = plt.subplots(1, 2, figsize=(12.0, 4.8), sharex=True)
+
+    for axis, (metric, label, lower_is_better) in zip(axes, metrics):
+        for model_index, model_name in enumerate(model_names):
+            values = []
+            for dataset_name in dataset_names:
+                model_result = dataset_results[dataset_name]["models"].get(model_name, {})
+                value = float("nan")
+                if model_result.get("status") == "ok":
+                    value = float(model_result["test_metrics"].get(metric, float("nan")))
+                values.append(value)
+
+            offset = (model_index - (len(model_names) - 1) / 2.0) * width
+            axis.bar(
+                x_positions + offset,
+                values,
+                width=width,
+                label=_short_model_label(model_name),
+            )
+
+        axis.set_title(label)
+        axis.set_ylabel(label)
+        if not lower_is_better:
+            axis.set_ylim(0.0, 1.05)
+        axis.set_xticks(x_positions)
+        axis.set_xticklabels(dataset_names, rotation=15, ha="right")
+        axis.grid(axis="y", alpha=0.25)
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    figure.legend(handles, labels, loc="lower center", ncol=min(3, len(labels)))
+    figure.suptitle("Gradient Boosting comparison on project datasets")
+    figure.tight_layout(rect=(0.0, 0.12, 1.0, 0.94))
+    figure.savefig(path, dpi=200)
+    plt.close(figure)
+    return path
+
+
 def export_results(results: Dict[str, Any], config: GBMComparisonConfig) -> None:
-    """Persist JSON and CSV artifacts for report writing."""
+    """Persist JSON, CSV, and figure artifacts for report writing."""
     rows = flatten_rows(results)
+    figure_path = plot_gbm_metric_comparison(
+        results,
+        config.figure_dir / "gbm_comparison_metrics.png",
+    )
     export_json(
         {
             "config": results["config"],
             "load_failures": results["load_failures"],
             "datasets": results["datasets"],
             "comparison_against_adaboost": results["comparison_against_adaboost"],
+            "figure_paths": {
+                "metric_comparison": figure_path,
+            },
             "results": results["results"],
         },
         config.output_dir / "gbm_comparison.json",
