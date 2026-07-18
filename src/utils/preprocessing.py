@@ -69,7 +69,10 @@ def train_test_split(*args: Any, **kwargs: Any) -> Any:
 def _resolve_data_path(path: str | Path, *, data_dir: str | Path | None = None) -> Path:
     """Resolve a dataset path from an explicit path or repository data directory."""
     candidate = Path(path)
-    if candidate.is_absolute() or candidate.exists():
+    if candidate.is_absolute():
+        return candidate
+
+    if candidate.exists():
         return candidate
 
     if data_dir is not None:
@@ -77,10 +80,15 @@ def _resolve_data_path(path: str | Path, *, data_dir: str | Path | None = None) 
         if fallback.exists():
             return fallback
 
+    if candidate.suffix == "":
+        directory_candidate = candidate.parent / candidate.name
+        if directory_candidate.exists():
+            return directory_candidate
+
     return candidate
 
 
-def _read_delimited_table(path: str | Path) -> np.ndarray:
+def _read_delimited_table(path: str | Path, *, max_rows: int | None = None) -> np.ndarray:
     """Read a delimited text table into a 2D string array."""
     dataset_path = Path(path)
     if not dataset_path.exists():
@@ -91,6 +99,7 @@ def _read_delimited_table(path: str | Path) -> np.ndarray:
         delimiter=",",
         dtype=str,
         encoding="utf-8",
+        max_rows=max_rows,
     )
 
     if raw_data.ndim == 1:
@@ -191,6 +200,8 @@ def _sample_dataset(
 
 def load_wdbc(
     path: str | Path = "data/wdbc.data",
+    *,
+    data_dir: str | Path | None = None,
 ) -> DatasetBundle:
     """
     Load the Wisconsin Diagnostic Breast Cancer dataset.
@@ -208,6 +219,8 @@ def load_wdbc(
     breast-cancer dataset provided by scikit-learn for compatibility.
     """
     dataset_path = _resolve_data_path(path)
+    if dataset_path.exists() and dataset_path.is_dir():
+        dataset_path = dataset_path / "wdbc.data"
 
     if not dataset_path.exists():
         from sklearn.datasets import load_breast_cancer
@@ -224,7 +237,7 @@ def load_wdbc(
             notes="Fallback to sklearn breast cancer dataset because the local WDBC file is unavailable.",
         )
 
-    raw_data = _read_delimited_table(dataset_path)
+    raw_data = _read_delimited_table(dataset_path, max_rows=None)
 
     if raw_data.shape[1] < 3:
         raise ValueError(
@@ -275,17 +288,21 @@ def load_wdbc(
 def load_adult(
     path: str | Path = "data/adult.data",
     *,
+    data_dir: str | Path | None = None,
     max_samples: int | None = None,
     random_state: int = 42,
 ) -> DatasetBundle:
     """Load the Adult dataset from a local CSV/TSV-like file."""
-    dataset_path = _resolve_data_path(path)
+    dataset_path = _resolve_data_path(path, data_dir=data_dir)
+    if dataset_path.exists() and dataset_path.is_dir():
+        dataset_path = dataset_path / "adult.data"
+
     if not dataset_path.exists():
         raise FileNotFoundError(
             f"Adult dataset was not found at: {dataset_path}"
         )
 
-    raw_data = _read_delimited_table(dataset_path)
+    raw_data = _read_delimited_table(dataset_path, max_rows=max_samples)
     if raw_data.shape[1] < 2:
         raise ValueError("Adult dataset must contain at least one feature column and a label.")
 
@@ -306,17 +323,21 @@ def load_adult(
 def load_covertype(
     path: str | Path = "data/covertype.data",
     *,
+    data_dir: str | Path | None = None,
     max_samples: int | None = None,
     random_state: int = 42,
 ) -> DatasetBundle:
     """Load the Covertype dataset from a local CSV-like file."""
-    dataset_path = _resolve_data_path(path)
+    dataset_path = _resolve_data_path(path, data_dir=data_dir)
+    if dataset_path.exists() and dataset_path.is_dir():
+        dataset_path = dataset_path / "covertype.data"
+
     if not dataset_path.exists():
         raise FileNotFoundError(
             f"Covertype dataset was not found at: {dataset_path}"
         )
 
-    raw_data = _read_delimited_table(dataset_path)
+    raw_data = _read_delimited_table(dataset_path, max_rows=max_samples)
     if raw_data.shape[1] < 2:
         raise ValueError("Covertype dataset must contain at least one feature column and a label.")
 
@@ -352,7 +373,7 @@ def load_digits_dataset(
         dataset_path = _resolve_data_path(path)
 
     if dataset_path is not None and dataset_path.exists():
-        raw_data = _read_delimited_table(dataset_path)
+        raw_data = _read_delimited_table(dataset_path, max_rows=sample_limit)
         if raw_data.shape[1] < 2:
             raise ValueError("Digits dataset must contain at least one feature column and a label.")
         X = _coerce_feature_matrix(raw_data[:, :-1])
@@ -408,16 +429,21 @@ def load_project_datasets(
     for name in names:
         normalized_name = str(name).lower()
         if normalized_name == "wdbc":
-            dataset = load_wdbc(data_directory / "wdbc.data")
+            dataset = load_wdbc(
+                data_directory / "wdbc.data",
+                data_dir=data_directory,
+            )
         elif normalized_name == "adult":
             dataset = load_adult(
                 data_directory / "adult.data",
+                data_dir=data_directory,
                 max_samples=adult_max_samples,
                 random_state=random_state,
             )
         elif normalized_name == "covertype":
             dataset = load_covertype(
                 data_directory / "covertype.data",
+                data_dir=data_directory,
                 max_samples=covertype_max_samples,
                 random_state=random_state,
             )
