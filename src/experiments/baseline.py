@@ -100,6 +100,7 @@ def main() -> int:
     """Run the WDBC baseline experiment and export the outputs."""
     ensure_results_dir(RESULTS_DIR)
 
+    dataset = load_wdbc(DATA_PATH)
     rows = run_baseline_experiment()
     print_results_table(rows)
 
@@ -109,11 +110,12 @@ def main() -> int:
     export_json({"experiment": "baseline", "results": rows}, json_path)
 
     summary_path = RESULTS_DIR / "baseline_summary.json"
+    classes, counts = np.unique(dataset.y, return_counts=True)
     payload = {
         "dataset": "wdbc",
-        "n_samples": int(np.shape(rows)[0]) if rows else 0,
-        "n_features": 0,
-        "class_counts": {},
+        "n_samples": int(dataset.X.shape[0]),
+        "n_features": int(dataset.X.shape[1]),
+        "class_counts": {str(c): int(n) for c, n in zip(classes, counts)},
     }
     summary_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
