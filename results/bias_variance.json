@@ -11,9 +11,9 @@
   },
   "dataset": {
     "name": "wdbc",
-    "task": "binary_classification",
-    "source": "data\\wdbc.data",
-    "notes": "Wisconsin Diagnostic Breast Cancer dataset loaded from the local data directory; labels are M=1 and B=0.",
+    "task": "binary",
+    "source": "wdbc.data",
+    "notes": "Wisconsin Diagnostic Breast Cancer dataset.",
     "n_samples": 569,
     "n_features": 30
   },
