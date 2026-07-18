@@ -1,0 +1,6 @@
+{
+  "dataset": "wdbc",
+  "n_samples": 3,
+  "n_features": 0,
+  "class_counts": {}
+}
