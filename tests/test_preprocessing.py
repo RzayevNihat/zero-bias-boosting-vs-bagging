@@ -8,6 +8,7 @@ from src.utils.preprocessing import (
     MeanImputer,
     PreprocessingPipeline,
     StandardScaler,
+    _coerce_feature_matrix,
     handle_missing_values,
     load_project_datasets,
     train_test_split,
@@ -258,3 +259,32 @@ def test_load_wdbc_falls_back_to_sklearn_when_local_file_missing(tmp_path):
     assert dataset.name == "wdbc"
     assert dataset.X.shape[0] > 0
     assert dataset.y.shape[0] > 0
+
+
+def test_load_adult_imputes_missing_features(tmp_path):
+    dataset_path = tmp_path / "adult.data"
+    dataset_path.write_text("?,0\n2,1\n", encoding="utf-8")
+
+    dataset = load_project_datasets(
+        names=("adult",),
+        data_dir=tmp_path,
+    )[0]
+
+    assert dataset.name == "adult"
+    assert not np.isnan(dataset.X).any()
+    assert np.allclose(dataset.X[0, 0], 2.0)
+
+
+def test_coerce_feature_matrix_encodes_categorical_values_consistently():
+    values = np.array(
+        [[" State-gov", " Bachelors"], ["Self-emp-not-inc", "HS-grad"]],
+        dtype=str,
+    )
+
+    matrix = _coerce_feature_matrix(values)
+
+    assert matrix.shape == (2, 2)
+    assert np.unique(matrix[:, 0]).tolist() == [0.0, 1.0]
+    assert np.unique(matrix[:, 1]).tolist() == [0.0, 1.0]
+    assert np.all(np.isin(matrix[:, 0], [0.0, 1.0]))
+    assert np.all(np.isin(matrix[:, 1], [0.0, 1.0]))
